@@ -6,8 +6,6 @@
 export { errorCodes } from "./lib/errors/error-codes.js";
 export type { ErrorCode } from "./lib/errors/error-codes.js";
 export * from "./lib/errors/error-schema.js";
-export * from "./schemas/ast.js";
-export * from "./schemas/artifacts.js";
-export * from "./schemas/common.js";
+export * from "./schemas/index.js";
 
 export const schemas = {};
