@@ -2,6 +2,7 @@ import { designAstSchema } from "../../schemas/ast.js";
 import { writeArtifactFile } from "../../storage/file-artifact-store.js";
 import { renderPreviewHtml } from "./html-renderer.js";
 
+/** 中文说明：生成 preview 所需的最小输入结构。 */
 export interface GeneratePreviewInput {
   sessionId: string;
   designVersion: string;
@@ -9,11 +10,13 @@ export interface GeneratePreviewInput {
   sectionSummary: string[];
 }
 
+/** 中文说明：preview 产物引用及文件名列表。 */
 export interface GeneratePreviewResult {
   previewRef: string;
   previewArtifacts: string[];
 }
 
+/** 中文说明：preview service 的最小调用接口。 */
 export interface PreviewService {
   generatePreview(input: GeneratePreviewInput): Promise<GeneratePreviewResult>;
   close(): void;

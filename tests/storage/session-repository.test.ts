@@ -1,3 +1,4 @@
+/** 中文说明：验证 session repository 的持久化与状态推进。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

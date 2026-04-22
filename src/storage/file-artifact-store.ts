@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
+/** 中文说明：写入单个本地产物文件时需要的参数。 */
 export interface ArtifactWriteInput {
   relativePath: string;
   contents: string;

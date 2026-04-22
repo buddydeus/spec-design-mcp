@@ -15,6 +15,7 @@ const generateDesignParamsSchema = z.object({
 type GenerateDesignParams = z.infer<typeof generateDesignParamsSchema>;
 type GenerateDesignResult = z.infer<typeof generateDesignResultSchema>;
 
+/** 中文说明：generate service 的最小调用接口。 */
 export interface GenerateService {
   generate(params: GenerateDesignParams): Promise<GenerateDesignResult>;
   close(): void;

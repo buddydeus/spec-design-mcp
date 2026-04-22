@@ -1,3 +1,4 @@
+/** 中文说明：验证 preview service 的文件输出行为。 */
 import { access, readFile, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

@@ -10,6 +10,7 @@ import {
 type ClarifyIntentParams = z.infer<typeof clarifyIntentParamsSchema>;
 type ClarifyIntentResult = z.infer<typeof clarifyIntentResultSchema>;
 
+/** 中文说明：clarify service 的最小调用接口。 */
 export interface ClarifyService {
   clarify(params: ClarifyIntentParams): Promise<ClarifyIntentResult>;
   close(): void;

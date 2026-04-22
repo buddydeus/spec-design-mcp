@@ -1,3 +1,4 @@
+/** 中文说明：验证 session 相关 tool 的基础输入输出。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

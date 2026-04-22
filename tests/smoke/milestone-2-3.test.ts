@@ -1,3 +1,4 @@
+/** 中文说明：覆盖 session 与 clarify 的早期里程碑链路。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

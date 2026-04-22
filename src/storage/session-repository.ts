@@ -6,6 +6,7 @@ import { getNowIsoString } from "../lib/runtime/ids.js";
 type SessionStatus = (typeof sessionStatusSchema)["enum"][keyof (typeof sessionStatusSchema)["enum"]];
 type InputItem = ReturnType<typeof inputItemSchema.parse>;
 
+/** 中文说明：持久化后的 session 完整记录。 */
 export interface StoredSession {
   sessionId: string;
   projectName: string;
@@ -17,6 +18,7 @@ export interface StoredSession {
   updatedAt: string;
 }
 
+/** 中文说明：创建 session 时需要的最小输入。 */
 export interface CreateStoredSessionInput {
   sessionId: string;
   projectName: string;
@@ -24,6 +26,7 @@ export interface CreateStoredSessionInput {
   status: SessionStatus;
 }
 
+/** 中文说明：session 仓储的最小调用接口。 */
 export interface SessionRepository {
   readonly database: RuntimeDatabase;
   createSession(input: CreateStoredSessionInput): Promise<StoredSession>;

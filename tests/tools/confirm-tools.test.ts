@@ -1,3 +1,4 @@
+/** 中文说明：验证 confirm tool 的最小返回结构。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

@@ -15,6 +15,7 @@ export const nodeIdSchema = z.string().min(1).regex(/^node_[a-zA-Z0-9_-]+$/);
 /** 中文说明：URL 作为输入契约存在，但本轮只约束格式，不处理抓取逻辑。 */
 export const urlSchema = z.string().url();
 
+/** 中文说明：统一约束 session 生命周期状态。 */
 export const sessionStatusSchema = z.enum([
   "created",
   "collecting_inputs",

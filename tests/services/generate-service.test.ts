@@ -1,3 +1,4 @@
+/** 中文说明：验证 generate service 的首版 AST 生成链路。 */
 import { access } from "node:fs/promises";
 import { rm } from "node:fs/promises";
 

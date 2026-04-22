@@ -1,3 +1,4 @@
+/** 中文说明：验证对外契约聚合入口仍可被正常消费。 */
 import { describe, expect, it } from "vitest";
 
 import {

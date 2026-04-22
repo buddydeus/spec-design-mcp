@@ -39,4 +39,5 @@ export const errorResponseSchema = z.object({
   retryable: z.boolean()
 });
 
+/** 中文说明：统一错误响应在 TypeScript 侧的推导类型。 */
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;

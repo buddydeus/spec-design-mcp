@@ -1,3 +1,4 @@
+/** 中文说明：验证 confirm service 的版本确认与异常路径。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

@@ -1,3 +1,4 @@
+/** 中文说明：覆盖 preview 产物生成的里程碑链路。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

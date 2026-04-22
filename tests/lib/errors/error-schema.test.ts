@@ -1,3 +1,4 @@
+/** 中文说明：验证统一错误 schema 的核心约束。 */
 import { describe, expect, it } from "vitest";
 import {
   errorResponseSchema,

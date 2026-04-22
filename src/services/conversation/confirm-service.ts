@@ -16,6 +16,7 @@ import {
 type ConfirmDesignParams = z.infer<typeof confirmDesignParamsSchema>;
 type ConfirmDesignResult = z.infer<typeof confirmDesignResultSchema>;
 
+/** 中文说明：confirm service 的最小调用接口。 */
 export interface ConfirmService {
   confirm(params: ConfirmDesignParams): Promise<ConfirmDesignResult>;
   close(): void;

@@ -45,6 +45,7 @@ export const createSessionResultSchema = z
   })
   .strict();
 
+/** 中文说明：追加输入工具的输入契约。 */
 export const appendInputParamsSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -52,6 +53,7 @@ export const appendInputParamsSchema = z
   })
   .strict();
 
+/** 中文说明：追加输入工具的输出契约。 */
 export const appendInputResultSchema = z
   .object({
     acceptedInputs: z.array(inputItemSchema),
@@ -59,12 +61,14 @@ export const appendInputResultSchema = z
   })
   .strict();
 
+/** 中文说明：clarify 工具的输入契约。 */
 export const clarifyIntentParamsSchema = z
   .object({
     sessionId: sessionIdSchema
   })
   .strict();
 
+/** 中文说明：clarify 工具的输出契约。 */
 export const clarifyIntentResultSchema = z
   .object({
     isReady: z.boolean(),
@@ -74,12 +78,14 @@ export const clarifyIntentResultSchema = z
   })
   .strict();
 
+/** 中文说明：generate 工具的输入契约。 */
 export const generateDesignParamsSchema = z
   .object({
     sessionId: sessionIdSchema
   })
   .strict();
 
+/** 中文说明：generate 工具的输出契约。 */
 export const generateDesignResultSchema = z
   .object({
     designVersion: designVersionSchema,
@@ -90,6 +96,7 @@ export const generateDesignResultSchema = z
   })
   .strict();
 
+/** 中文说明：revise 工具的输入契约。 */
 export const reviseDesignParamsSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -98,6 +105,7 @@ export const reviseDesignParamsSchema = z
   })
   .strict();
 
+/** 中文说明：revise 工具的输出契约。 */
 export const reviseDesignResultSchema = z
   .object({
     baseVersion: designVersionSchema,
@@ -110,6 +118,7 @@ export const reviseDesignResultSchema = z
   })
   .strict();
 
+/** 中文说明：confirm 工具的输入契约。 */
 export const confirmDesignParamsSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -117,6 +126,7 @@ export const confirmDesignParamsSchema = z
   })
   .strict();
 
+/** 中文说明：confirm 工具的输出契约。 */
 export const confirmDesignResultSchema = z
   .object({
     confirmedVersion: designVersionSchema,
@@ -124,6 +134,7 @@ export const confirmDesignResultSchema = z
   })
   .strict();
 
+/** 中文说明：export 工具的输入契约。 */
 export const exportPackageParamsSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -131,6 +142,7 @@ export const exportPackageParamsSchema = z
   })
   .strict();
 
+/** 中文说明：export 工具的输出契约。 */
 export const exportPackageResultSchema = z
   .object({
     deliveryPackageRef: z.string().min(1),
@@ -139,6 +151,7 @@ export const exportPackageResultSchema = z
   })
   .strict();
 
+/** 中文说明：统一错误结果契约，供各工具失败时复用。 */
 export const toolErrorResultSchema = errorResponseSchema.extend({
   occurredAt: isoDatetimeSchema.optional()
 });

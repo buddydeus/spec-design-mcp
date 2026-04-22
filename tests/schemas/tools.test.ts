@@ -1,3 +1,4 @@
+/** 中文说明：验证各 tool 输入输出 schema 的关键约束。 */
 import { describe, expect, it } from "vitest";
 
 import {

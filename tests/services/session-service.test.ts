@@ -1,3 +1,4 @@
+/** 中文说明：验证 session service 的 create / append 基础流程。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

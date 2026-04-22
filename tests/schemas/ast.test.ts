@@ -1,3 +1,4 @@
+/** 中文说明：验证 DesignDOMAST v0 的结构约束。 */
 import { describe, expect, it } from "vitest";
 
 import { designAstSchema } from "../../src/schemas/ast.js";

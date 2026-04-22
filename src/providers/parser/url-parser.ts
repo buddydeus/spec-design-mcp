@@ -1,3 +1,4 @@
+/** 中文说明：URL 输入在本地规则解析后的最小语义结果。 */
 export interface ParsedUrlSignal {
   normalizedUrl: string;
   hostname: string;

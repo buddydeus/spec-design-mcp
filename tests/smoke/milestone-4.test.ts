@@ -1,3 +1,4 @@
+/** 中文说明：覆盖 generate 首次落盘的里程碑链路。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

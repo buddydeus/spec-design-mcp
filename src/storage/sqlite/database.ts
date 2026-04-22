@@ -5,6 +5,7 @@ import {
   type RuntimePaths
 } from "../../lib/runtime/paths.js";
 
+/** 中文说明：SQLite 数据库句柄与运行时路径集合。 */
 export interface RuntimeDatabase {
   db: DatabaseSync;
   paths: RuntimePaths;

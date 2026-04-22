@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
+/** 中文说明：运行时目录与 SQLite 文件的统一路径集合。 */
 export interface RuntimePaths {
   runtimeRoot: string;
   sqliteDir: string;
@@ -31,7 +32,10 @@ export function getRuntimePaths(rootDir = process.cwd()): RuntimePaths {
   };
 }
 
-/** 中文说明：运行前统一确保本地目录存在。 */
+/**
+ * 中文说明：
+ * 运行前统一确保本地目录存在，并返回后续模块可复用的路径集合。
+ */
 export async function ensureRuntimeDirectories(rootDir = process.cwd()): Promise<RuntimePaths> {
   const paths = getRuntimePaths(rootDir);
 

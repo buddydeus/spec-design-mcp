@@ -1,3 +1,4 @@
+/** 中文说明：验证 export tool 的交付包引用返回。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

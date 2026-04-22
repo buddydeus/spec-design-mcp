@@ -13,6 +13,7 @@ import { createPreviewService } from "../preview/preview-service.js";
 type ReviseDesignParams = z.infer<typeof reviseDesignParamsSchema>;
 type ReviseDesignResult = z.infer<typeof reviseDesignResultSchema>;
 
+/** 中文说明：revise service 的最小调用接口。 */
 export interface ReviseService {
   revise(params: ReviseDesignParams): Promise<ReviseDesignResult>;
   close(): void;

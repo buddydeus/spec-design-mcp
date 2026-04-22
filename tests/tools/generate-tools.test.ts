@@ -1,3 +1,4 @@
+/** 中文说明：验证 generate tool 的最小可用输出。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

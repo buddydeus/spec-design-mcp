@@ -3,6 +3,7 @@ import { designVersionSchema } from "../schemas/common.js";
 import { createRuntimeDatabase, type RuntimeDatabase } from "./sqlite/database.js";
 import { getNowIsoString } from "../lib/runtime/ids.js";
 
+/** 中文说明：持久化后的设计版本完整记录。 */
 export interface StoredDesignVersion {
   sessionId: string;
   designVersion: string;
@@ -16,6 +17,7 @@ export interface StoredDesignVersion {
   createdAt: string;
 }
 
+/** 中文说明：保存设计版本时需要提供的输入结构。 */
 export interface SaveDesignVersionInput {
   sessionId: string;
   designVersion: string;
@@ -28,6 +30,7 @@ export interface SaveDesignVersionInput {
   previewRef: string | null;
 }
 
+/** 中文说明：设计版本仓储的最小调用接口。 */
 export interface DesignVersionRepository {
   readonly database: RuntimeDatabase;
   saveVersion(input: SaveDesignVersionInput): Promise<StoredDesignVersion>;

@@ -1,5 +1,6 @@
 import type { RevisionOperation } from "./ast-reviser.js";
 
+/** 中文说明：AST 修订摘要的最小返回结构。 */
 export interface AstDiffResult {
   diffSummary: string[];
   nodeDiffs: Record<string, unknown>[];

@@ -1,3 +1,4 @@
+/** 中文说明：验证 artifact 相关 schema 的最小契约。 */
 import { describe, expect, it } from "vitest";
 
 import {

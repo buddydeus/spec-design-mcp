@@ -1,3 +1,4 @@
+/** 中文说明：验证 export service 的最小交付包输出。 */
 import { access, readFile, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

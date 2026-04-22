@@ -1,3 +1,4 @@
+/** 中文说明：验证 revise service 的版本递增与冲突规则。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

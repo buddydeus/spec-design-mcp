@@ -1,3 +1,4 @@
+/** 中文说明：覆盖 revise 链路的里程碑回归。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

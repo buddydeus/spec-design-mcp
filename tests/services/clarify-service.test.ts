@@ -1,3 +1,4 @@
+/** 中文说明：验证 clarify service 的规则提取行为。 */
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

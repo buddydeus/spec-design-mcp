@@ -57,6 +57,7 @@ interface DesignAst {
   root: DesignNode;
 }
 
+/** 中文说明：单条修订指令应用到 AST 后的稳定差异描述。 */
 export type RevisionOperation =
   | {
       type: "update_text";
@@ -97,6 +98,7 @@ export type RevisionOperation =
       to: string;
     };
 
+/** 中文说明：AST 修订后的结构与操作清单。 */
 export interface ReviseAstResult {
   designAst: DesignAst;
   operations: RevisionOperation[];

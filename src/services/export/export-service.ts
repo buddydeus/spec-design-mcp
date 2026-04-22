@@ -20,6 +20,7 @@ import { renderCompiledHtml } from "./html-exporter.js";
 type ExportPackageParams = z.infer<typeof exportPackageParamsSchema>;
 type ExportPackageResult = z.infer<typeof exportPackageResultSchema>;
 
+/** 中文说明：export service 的最小调用接口。 */
 export interface ExportService {
   exportPackage(params: ExportPackageParams): Promise<ExportPackageResult>;
   close(): void;
@@ -59,6 +60,7 @@ export async function createExportService(
         throw new Error("VERSION_NOT_CONFIRMED");
       }
 
+      // v0 导出包固定落在版本目录下的 export 子目录，便于人工检查与自动消费。
       const basePath = `${validatedParams.sessionId}/${validatedParams.designVersion}/export`;
       const compiledHtml = renderCompiledHtml(designVersion.designAst);
       const compiledCss = emitCompiledCss();

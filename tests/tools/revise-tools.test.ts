@@ -1,3 +1,4 @@
+/** 中文说明：验证 revise tool 的结构化返回。 */
 import { access, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";

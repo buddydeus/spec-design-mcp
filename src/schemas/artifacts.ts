@@ -48,6 +48,7 @@ const annotationItemSchema = z
   })
   .strict();
 
+/** 中文说明：annotation manifest 用于标注导出 HTML 中可追踪节点。 */
 export const annotationManifestSchema = z.array(annotationItemSchema);
 
 const bindingFieldSchema = z
