@@ -1,9 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-describe("contract entry", () => {
-  it("exports a schema namespace", async () => {
-    const entry = await import("../../src/index.js");
+import {
+  artifactManifestSchema,
+  createSessionParamsSchema,
+  designAstSchema,
+  errorResponseSchema,
+  schemas
+} from "../../src/index.js";
 
-    expect(entry.schemas).toBeDefined();
+describe("contract entry", () => {
+  it("exports the shared schema namespace marker", () => {
+    expect(schemas.name).toBe("spec-design-mcp-contracts");
+  });
+
+  it("re-exports core schemas from the entrypoint", () => {
+    expect(designAstSchema).toBeDefined();
+    expect(createSessionParamsSchema).toBeDefined();
+    expect(artifactManifestSchema).toBeDefined();
+    expect(errorResponseSchema).toBeDefined();
   });
 });
