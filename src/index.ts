@@ -7,6 +7,7 @@ export { errorCodes } from "./lib/errors/error-codes.js";
 export type { ErrorCode } from "./lib/errors/error-codes.js";
 export * from "./lib/errors/error-schema.js";
 export * from "./schemas/index.js";
+export * from "./tools/generate-tools.js";
 export * from "./tools/clarify-tools.js";
 export * from "./tools/session-tools.js";
 
