@@ -6,6 +6,7 @@ import { createSessionRepository, type SessionRepository } from "../../storage/s
 import { createClarifyService } from "./clarify-service.js";
 import { buildDesignAst } from "../ast/ast-builder.js";
 import { createSectionSummary } from "../ast/section-summary.js";
+import { createPreviewService } from "../preview/preview-service.js";
 
 const generateDesignParamsSchema = z.object({
   sessionId: z.string().min(1)
@@ -31,6 +32,7 @@ export async function createGenerateService(
   const runtimeVersionRepository =
     designVersionRepository ?? (await createDesignVersionRepository());
   const clarifyService = await createClarifyService(runtimeSessionRepository);
+  const previewService = await createPreviewService();
 
   return {
     async generate(params) {
@@ -45,6 +47,12 @@ export async function createGenerateService(
 
       const designAst = buildDesignAst(clarifyResult.interimIntentModel);
       const sectionSummary = createSectionSummary(designAst);
+      const previewResult = await previewService.generatePreview({
+        sessionId: validatedParams.sessionId,
+        designVersion: "v1",
+        designAst,
+        sectionSummary
+      });
 
       await runtimeVersionRepository.saveVersion({
         sessionId: validatedParams.sessionId,
@@ -55,19 +63,20 @@ export async function createGenerateService(
         sectionSummary,
         diffSummary: [],
         nodeDiffs: [],
-        previewRef: null
+        previewRef: previewResult.previewRef
       });
 
       return generateDesignResultSchema.parse({
         designVersion: "v1",
         designAst,
         sectionSummary,
-        previewRef: `.runtime/artifacts/${validatedParams.sessionId}/v1`,
-        previewArtifacts: []
+        previewRef: previewResult.previewRef,
+        previewArtifacts: previewResult.previewArtifacts
       });
     },
     close() {
       clarifyService.close();
+      previewService.close();
       runtimeVersionRepository.close();
     }
   };

@@ -1,3 +1,4 @@
+import { access } from "node:fs/promises";
 import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -42,6 +43,11 @@ describe("generate service", () => {
     expect(designAstSchema.parse(result.designAst)).toBeTruthy();
     expect(result.sectionSummary.length).toBeGreaterThanOrEqual(3);
     expect(designAst.root.children[0]?.name).toBe("hero");
+    expect(result.previewRef).toContain("preview.html");
+    expect(result.previewArtifacts).toContain("preview.html");
+    await access(
+      new URL(`../../${result.previewRef}`, import.meta.url)
+    );
     sessionService.close();
     generateService.close();
   });
