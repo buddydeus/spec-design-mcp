@@ -31,6 +31,8 @@ export async function createRuntimeDatabase(rootDir = process.cwd()): Promise<Ru
   const paths = await ensureRuntimeDirectories(rootDir);
   const db = new DatabaseSync(paths.sqliteDbPath);
 
+  db.exec("PRAGMA journal_mode = WAL");
+  db.exec("PRAGMA busy_timeout = 5000");
   db.exec(createSessionsTableSql);
 
   return { db, paths };
