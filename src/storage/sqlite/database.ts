@@ -23,6 +23,22 @@ const createSessionsTableSql = `
   )
 `;
 
+const createDesignVersionsTableSql = `
+  CREATE TABLE IF NOT EXISTS design_versions (
+    session_id TEXT NOT NULL,
+    design_version TEXT NOT NULL,
+    base_version TEXT,
+    source_type TEXT NOT NULL,
+    design_ast_json TEXT NOT NULL,
+    section_summary_json TEXT NOT NULL,
+    diff_summary_json TEXT NOT NULL,
+    node_diffs_json TEXT NOT NULL,
+    preview_ref TEXT,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (session_id, design_version)
+  )
+`;
+
 /**
  * 中文说明：
  * 当前阶段只初始化最小 SQLite 元数据存储，不在这里夹带业务逻辑。
@@ -34,6 +50,7 @@ export async function createRuntimeDatabase(rootDir = process.cwd()): Promise<Ru
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA busy_timeout = 5000");
   db.exec(createSessionsTableSql);
+  db.exec(createDesignVersionsTableSql);
 
   return { db, paths };
 }
