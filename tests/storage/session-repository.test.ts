@@ -16,5 +16,46 @@ describe("session repository", () => {
 
     expect(repository).toBeDefined();
     await access(new URL("../../.runtime/sqlite/spec-design-mcp.db", import.meta.url));
+    repository.close();
+  });
+
+  it("persists a created session", async () => {
+    const repository = await createSessionRepository();
+
+    const session = await repository.createSession({
+      sessionId: "session_test_create",
+      projectName: "Spec MCP",
+      goal: "Create landing page",
+      status: "created"
+    });
+
+    const stored = await repository.getSession(session.sessionId);
+
+    expect(stored?.projectName).toBe("Spec MCP");
+    expect(stored?.inputs).toEqual([]);
+    repository.close();
+  });
+
+  it("appends inputs without overwriting earlier entries", async () => {
+    const repository = await createSessionRepository();
+
+    await repository.createSession({
+      sessionId: "session_test_append",
+      projectName: "Spec MCP",
+      goal: "Collect inputs",
+      status: "created"
+    });
+
+    await repository.appendInputs("session_test_append", [
+      { type: "text", text: "First" },
+      { type: "url", url: "https://example.com" }
+    ]);
+
+    const stored = await repository.getSession("session_test_append");
+
+    expect(stored?.inputs).toHaveLength(2);
+    expect(stored?.inputs[0]).toEqual({ type: "text", text: "First" });
+    expect(stored?.inputs[1]).toEqual({ type: "url", url: "https://example.com" });
+    repository.close();
   });
 });
