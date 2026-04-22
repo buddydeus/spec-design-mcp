@@ -32,6 +32,7 @@ export interface DesignVersionRepository {
   readonly database: RuntimeDatabase;
   saveVersion(input: SaveDesignVersionInput): Promise<StoredDesignVersion>;
   getLatestVersion(sessionId: string): Promise<StoredDesignVersion | null>;
+  getVersion(sessionId: string, designVersion: string): Promise<StoredDesignVersion | null>;
   close(): void;
 }
 
@@ -70,6 +71,22 @@ export async function createDesignVersionRepository(): Promise<DesignVersionRepo
     FROM design_versions
     WHERE session_id = ?
     ORDER BY created_at DESC
+    LIMIT 1
+  `);
+  const selectVersionStatement = database.db.prepare(`
+    SELECT
+      session_id,
+      design_version,
+      base_version,
+      source_type,
+      design_ast_json,
+      section_summary_json,
+      diff_summary_json,
+      node_diffs_json,
+      preview_ref,
+      created_at
+    FROM design_versions
+    WHERE session_id = ? AND design_version = ?
     LIMIT 1
   `);
 
@@ -141,6 +158,24 @@ export async function createDesignVersionRepository(): Promise<DesignVersionRepo
     },
     async getLatestVersion(sessionId) {
       const row = selectLatestVersionStatement.get(sessionId) as
+        | {
+            session_id: string;
+            design_version: string;
+            base_version: string | null;
+            source_type: "generate" | "revise";
+            design_ast_json: string;
+            section_summary_json: string;
+            diff_summary_json: string;
+            node_diffs_json: string;
+            preview_ref: string | null;
+            created_at: string;
+          }
+        | undefined;
+
+      return mapRow(row);
+    },
+    async getVersion(sessionId, designVersion) {
+      const row = selectVersionStatement.get(sessionId, designVersion) as
         | {
             session_id: string;
             design_version: string;
