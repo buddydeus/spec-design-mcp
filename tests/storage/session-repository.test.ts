@@ -58,4 +58,23 @@ describe("session repository", () => {
     expect(stored?.inputs[1]).toEqual({ type: "url", url: "https://example.com" });
     repository.close();
   });
+
+  it("updates confirmed version and confirmed status", async () => {
+    const repository = await createSessionRepository();
+
+    await repository.createSession({
+      sessionId: "session_test_confirm",
+      projectName: "Spec MCP",
+      goal: "Confirm design",
+      status: "created"
+    });
+
+    await repository.confirmVersion("session_test_confirm", "v2");
+
+    const stored = await repository.getSession("session_test_confirm");
+
+    expect(stored?.confirmedVersion).toBe("v2");
+    expect(stored?.status).toBe("confirmed");
+    repository.close();
+  });
 });

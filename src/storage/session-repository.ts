@@ -29,6 +29,8 @@ export interface SessionRepository {
   createSession(input: CreateStoredSessionInput): Promise<StoredSession>;
   getSession(sessionId: string): Promise<StoredSession | null>;
   appendInputs(sessionId: string, inputs: InputItem[]): Promise<StoredSession>;
+  confirmVersion(sessionId: string, designVersion: string): Promise<StoredSession>;
+  markExported(sessionId: string): Promise<StoredSession>;
   close(): void;
 }
 
@@ -68,6 +70,21 @@ export async function createSessionRepository(): Promise<SessionRepository> {
     SET
       status = ?,
       inputs_json = ?,
+      updated_at = ?
+    WHERE session_id = ?
+  `);
+  const confirmVersionStatement = database.db.prepare(`
+    UPDATE sessions
+    SET
+      status = ?,
+      confirmed_version = ?,
+      updated_at = ?
+    WHERE session_id = ?
+  `);
+  const markExportedStatement = database.db.prepare(`
+    UPDATE sessions
+    SET
+      status = ?,
       updated_at = ?
     WHERE session_id = ?
   `);
@@ -155,6 +172,52 @@ export async function createSessionRepository(): Promise<SessionRepository> {
         ...existingSession,
         status: nextStatus,
         inputs: nextInputs,
+        updatedAt
+      };
+    },
+    async confirmVersion(sessionId, designVersion) {
+      const existingSession = readSession(sessionId);
+
+      if (!existingSession) {
+        throw new Error(`Session not found: ${sessionId}`);
+      }
+
+      const updatedAt = getNowIsoString();
+      const nextStatus = sessionStatusSchema.parse("confirmed");
+
+      confirmVersionStatement.run(
+        nextStatus,
+        designVersion,
+        updatedAt,
+        sessionId
+      );
+
+      return {
+        ...existingSession,
+        status: nextStatus,
+        confirmedVersion: designVersion,
+        updatedAt
+      };
+    },
+    async markExported(sessionId) {
+      const existingSession = readSession(sessionId);
+
+      if (!existingSession) {
+        throw new Error(`Session not found: ${sessionId}`);
+      }
+
+      const updatedAt = getNowIsoString();
+      const nextStatus = sessionStatusSchema.parse("exported");
+
+      markExportedStatement.run(
+        nextStatus,
+        updatedAt,
+        sessionId
+      );
+
+      return {
+        ...existingSession,
+        status: nextStatus,
         updatedAt
       };
     },
