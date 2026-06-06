@@ -7,16 +7,21 @@ export interface ParsedUrlSignal {
   hostname: string;
   path: string;
   summaryText: string;
-  sourceType: "url_metadata" | "url_fetched_metadata" | "unparsed_url";
+  sourceType: "url_metadata" | "url_fetched_metadata" | "external_url_parser" | "unparsed_url";
   fallbackReason: string | null;
 }
 
 export const urlParserEnvVars = {
+  parserMode: "SPEC_DESIGN_MCP_URL_PARSER",
+  externalEndpoint: "SPEC_DESIGN_MCP_URL_PARSER_ENDPOINT",
+  externalApiKey: "SPEC_DESIGN_MCP_URL_PARSER_API_KEY",
+  externalTimeoutMs: "SPEC_DESIGN_MCP_URL_PARSER_TIMEOUT_MS",
   fetchMode: "SPEC_DESIGN_MCP_URL_FETCH",
   fetchTimeoutMs: "SPEC_DESIGN_MCP_URL_FETCH_TIMEOUT_MS",
   fetchMaxBytes: "SPEC_DESIGN_MCP_URL_FETCH_MAX_BYTES"
 } as const;
 
+export type UrlParserMode = "local" | "external";
 export type UrlFetchMode = "off" | "metadata";
 
 export interface UrlFetchPolicy {
@@ -25,7 +30,16 @@ export interface UrlFetchPolicy {
   maxBytes: number;
 }
 
-export interface ResolveUrlSignalOptions extends Partial<UrlFetchPolicy> {
+export interface ExternalUrlParserConfig {
+  parserMode: UrlParserMode;
+  endpoint?: string;
+  apiKey?: string;
+  timeoutMs: number;
+}
+
+export interface ResolveUrlSignalOptions
+  extends Partial<UrlFetchPolicy>,
+    Partial<ExternalUrlParserConfig> {
   fetchFn?: typeof fetch;
 }
 
@@ -33,6 +47,11 @@ const defaultUrlFetchPolicy: UrlFetchPolicy = {
   mode: "off",
   timeoutMs: 2_000,
   maxBytes: 64_000
+};
+
+const defaultExternalParserConfig: ExternalUrlParserConfig = {
+  parserMode: "local",
+  timeoutMs: 2_000
 };
 
 /**
@@ -83,15 +102,31 @@ export function readUrlFetchPolicyFromEnv(env: NodeJS.ProcessEnv = process.env):
   };
 }
 
+export function readExternalUrlParserConfigFromEnv(
+  env: NodeJS.ProcessEnv = process.env
+): ExternalUrlParserConfig {
+  return {
+    parserMode: env[urlParserEnvVars.parserMode] === "external" ? "external" : "local",
+    endpoint: env[urlParserEnvVars.externalEndpoint],
+    apiKey: env[urlParserEnvVars.externalApiKey],
+    timeoutMs: parsePositiveInteger(
+      env[urlParserEnvVars.externalTimeoutMs],
+      defaultExternalParserConfig.timeoutMs
+    )
+  };
+}
+
 export function createConfiguredUrlSignalResolver(
   env: NodeJS.ProcessEnv = process.env,
   fetchFn: typeof fetch = fetch
 ): (input: string) => Promise<ParsedUrlSignal> {
   const policy = readUrlFetchPolicyFromEnv(env);
+  const externalParserConfig = readExternalUrlParserConfigFromEnv(env);
 
   return (input) =>
     resolveUrlSignal(input, {
       ...policy,
+      ...externalParserConfig,
       fetchFn
     });
 }
@@ -240,6 +275,108 @@ function uniqueTextParts(parts: Array<string | null>): string[] {
   return result;
 }
 
+function normalizeString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function normalizeExternalSummaryParts(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const record = payload as Record<string, unknown>;
+  const summary = normalizeString(record.summaryText) ?? normalizeString(record.summary);
+  const title = normalizeString(record.title);
+  const description = normalizeString(record.description);
+  const heading = normalizeString(record.heading) ?? normalizeString(record.h1);
+  const keywords = Array.isArray(record.keywords)
+    ? record.keywords
+        .map((keyword) => normalizeString(keyword))
+        .filter((keyword): keyword is string => Boolean(keyword))
+    : [];
+
+  return uniqueTextParts([summary, title, description, heading, keywords.join(" ")]);
+}
+
+async function resolveWithExternalParser(
+  baseSignal: ParsedUrlSignal,
+  options: ResolveUrlSignalOptions
+): Promise<ParsedUrlSignal> {
+  if (!options.endpoint) {
+    return {
+      ...baseSignal,
+      fallbackReason: "External URL parser is selected but endpoint is missing; using local URL signal."
+    };
+  }
+
+  const abortController = new AbortController();
+  const timeout = setTimeout(
+    () => abortController.abort(),
+    options.timeoutMs ?? defaultExternalParserConfig.timeoutMs
+  );
+
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    if (options.apiKey) {
+      headers.Authorization = `Bearer ${options.apiKey}`;
+    }
+
+    const response = await (options.fetchFn ?? fetch)(options.endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        url: baseSignal.normalizedUrl,
+        fallbackSignal: {
+          hostname: baseSignal.hostname,
+          path: baseSignal.path,
+          summaryText: baseSignal.summaryText
+        }
+      }),
+      signal: abortController.signal
+    });
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      return {
+        ...baseSignal,
+        fallbackReason: `External URL parser failed with status ${response.status}; using local URL signal.`
+      };
+    }
+
+    const payload = JSON.parse(responseText) as unknown;
+    const summaryParts = uniqueTextParts([
+      baseSignal.summaryText,
+      ...normalizeExternalSummaryParts(payload)
+    ]);
+
+    if (summaryParts.length <= 1) {
+      return {
+        ...baseSignal,
+        fallbackReason: "External URL parser returned no usable summary fields; using local URL signal."
+      };
+    }
+
+    return {
+      ...baseSignal,
+      summaryText: summaryParts.join(" "),
+      sourceType: "external_url_parser",
+      fallbackReason: null
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+
+    return {
+      ...baseSignal,
+      fallbackReason: `External URL parser failed: ${reason}; using local URL signal.`
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function resolveUrlSignal(
   input: string,
   options: ResolveUrlSignalOptions = {}
@@ -249,6 +386,17 @@ export async function resolveUrlSignal(
     ...defaultUrlFetchPolicy,
     ...options
   };
+  const externalParserConfig: ExternalUrlParserConfig = {
+    ...defaultExternalParserConfig,
+    ...options
+  };
+
+  if (externalParserConfig.parserMode === "external" && baseSignal.sourceType === "url_metadata") {
+    return resolveWithExternalParser(baseSignal, {
+      ...externalParserConfig,
+      fetchFn: options.fetchFn
+    });
+  }
 
   if (policy.mode !== "metadata" || baseSignal.sourceType !== "url_metadata") {
     return baseSignal;

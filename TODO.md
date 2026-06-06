@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 9 已完成，待规划下一阶段
+- 最近检查：阶段 10 已完成，待规划下一阶段
 - 最近验证：
-  - `npm test`：34 个测试文件、68 个测试通过
+  - `npm test`：34 个测试文件、72 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -30,6 +30,7 @@
 - rule-based clarify
 - URL metadata 降级诊断
 - 可选受限 URL HTML metadata 抓取
+- 可配置外部 URL parser
 - 生成受限 `DesignDOMAST`
 - 共享 `CompiledDocument` 编译中间结构
 - 结构化视觉快照与 revise visual diff
@@ -46,7 +47,7 @@
 
 - 当前提供本地 stdio MCP Server 和 stateless Streamable HTTP MCP Server。
 - 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 需要显式环境变量启用。
-- URL 默认只从 metadata 派生弱信号；远端 HTML metadata 抓取需要显式环境变量启用。
+- URL 默认只从 metadata 派生弱信号；远端 HTML metadata 抓取和外部 parser 需要显式环境变量启用。
 - 设计产物以结构可用为主，不追求高保真视觉。
 - preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
 
@@ -238,6 +239,25 @@
 - HTTP 入口默认不维护 transport session 状态，业务 session 仍由现有持久化层管理。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 10：接入外部 URL parser
+
+状态：已完成
+
+目标：
+
+- 已新增 `SPEC_DESIGN_MCP_URL_PARSER=external` 外部 parser 模式。
+- 已支持 `SPEC_DESIGN_MCP_URL_PARSER_ENDPOINT`、`SPEC_DESIGN_MCP_URL_PARSER_API_KEY`、`SPEC_DESIGN_MCP_URL_PARSER_TIMEOUT_MS` 配置。
+- 已向外部 parser 发送 URL 和本地 fallback signal。
+- 已归一化外部 JSON 中的 `summaryText` / `summary`、`title`、`description`、`heading` / `h1`、`keywords` 字段。
+- 已在外部 parser 缺失、HTTP 失败、响应不可用或异常时回退到本地 URL signal。
+
+验收：
+
+- 默认无配置时仍完全本地可跑。
+- 配置外部 parser 后 clarify 可消费外部 parser 增强后的 URL intent signal。
+- 外部 parser 失败不会破坏 clarify 主链路。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+
 ## 当前下一步
 
-阶段 9 已完成。下一轮建议从外部 URL parser、真实浏览器 screenshot 导出，或 HTTP 认证/限流/stateful session 管理中选择一个新阶段。
+阶段 10 已完成。下一轮建议从真实浏览器 screenshot 导出、HTTP 认证/限流/stateful session 管理，或外部 URL parser 响应契约收敛中选择一个新阶段。

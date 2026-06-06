@@ -23,6 +23,7 @@
 - 可配置 OpenAI-compatible LLM intent provider
 - URL metadata 降级诊断
 - 可选受限 URL HTML metadata 抓取
+- 可配置外部 URL parser
 
 ## 当前 `v0` 不做
 
@@ -33,6 +34,7 @@
 - screenshot 导出
 - 默认启用真实 LLM provider
 - 默认抓取远端 URL 内容
+- 默认调用外部 URL parser
 
 ## Intent Provider
 
@@ -45,7 +47,7 @@
 - `src/providers/llm/openai-compatible-intent-provider.ts`
   - 可选真实 LLM provider，读取 chat completion JSON 响应
 - `src/providers/parser/url-parser.ts`
-  - 默认只从 hostname/path 派生弱信号；可选抓取受限 HTML metadata，并返回 `fallbackReason`
+  - 默认只从 hostname/path 派生弱信号；可选抓取受限 HTML metadata 或调用外部 parser，并返回 `fallbackReason`
 
 启用真实 LLM intent provider：
 
@@ -67,6 +69,17 @@ SPEC_DESIGN_MCP_URL_FETCH_MAX_BYTES=64000
 ```
 
 URL 抓取默认关闭。开启后仅请求 `http` / `https`，拒绝 localhost、loopback 和常见 private IP 目标，只接受 HTML / XHTML 响应，并只读取限定字节数内的 `<title>`、`description`、`og:description` 和首个 `<h1>`。
+
+启用外部 URL parser：
+
+```bash
+SPEC_DESIGN_MCP_URL_PARSER=external
+SPEC_DESIGN_MCP_URL_PARSER_ENDPOINT=https://parser.example.com/parse
+SPEC_DESIGN_MCP_URL_PARSER_API_KEY=your-api-key
+SPEC_DESIGN_MCP_URL_PARSER_TIMEOUT_MS=2000
+```
+
+外部 URL parser 需要返回 JSON。当前会读取 `summaryText` / `summary`、`title`、`description`、`heading` / `h1`、`keywords` 这些字段并合并为 URL intent signal。`SPEC_DESIGN_MCP_URL_PARSER_API_KEY` 可选；外部 parser 请求失败或返回不可用内容时，会回退到本地 URL signal。
 
 ## 环境要求
 
@@ -264,7 +277,7 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 
 ## 后续优化
 
-- 外部 URL parser 接入
 - 真实浏览器 screenshot 导出
+- HTTP 认证、限流或 stateful session 管理
 
 发布或交付前检查见 `docs/release-checklist.md`。

@@ -2,7 +2,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createConfiguredUrlSignalResolver,
   parseUrlSignal,
+  readExternalUrlParserConfigFromEnv,
   readUrlFetchPolicyFromEnv,
   resolveUrlSignal,
   urlParserEnvVars
@@ -81,6 +83,76 @@ describe("url parser", () => {
     expect(signal.summaryText).toContain("Start Free Trial");
   });
 
+  it("uses an external URL parser when configured", async () => {
+    const signal = await resolveUrlSignal("https://example.com/product", {
+      parserMode: "external",
+      endpoint: "https://parser.example.test/parse",
+      apiKey: "parser-key",
+      fetchFn: async (input, init) => {
+        expect(init).toBeDefined();
+
+        const requestInit = init!;
+        const body = JSON.parse(requestInit.body as string) as {
+          url: string;
+          fallbackSignal: { summaryText: string };
+        };
+
+        expect(input).toBe("https://parser.example.test/parse");
+        expect(requestInit.method).toBe("POST");
+        expect(requestInit.headers).toMatchObject({
+          Authorization: "Bearer parser-key"
+        });
+        expect(body).toMatchObject({
+          url: "https://example.com/product",
+          fallbackSignal: {
+            summaryText: "example.com product"
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            title: "External Product Page",
+            description: "Developer workflow with hero features pricing",
+            h1: "Start Free Trial"
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json"
+            }
+          }
+        );
+      }
+    });
+
+    expect(signal).toMatchObject({
+      normalizedUrl: "https://example.com/product",
+      sourceType: "external_url_parser",
+      fallbackReason: null
+    });
+    expect(signal.summaryText).toContain("External Product Page");
+    expect(signal.summaryText).toContain("hero features pricing");
+    expect(signal.summaryText).toContain("Start Free Trial");
+  });
+
+  it("falls back when the external URL parser fails", async () => {
+    const signal = await resolveUrlSignal("https://example.com/product", {
+      parserMode: "external",
+      endpoint: "https://parser.example.test/parse",
+      fetchFn: async () =>
+        new Response("upstream unavailable", {
+          status: 503
+        })
+    });
+
+    expect(signal).toMatchObject({
+      normalizedUrl: "https://example.com/product",
+      summaryText: "example.com product",
+      sourceType: "url_metadata"
+    });
+    expect(signal.fallbackReason).toContain("External URL parser failed with status 503");
+  });
+
   it("rejects localhost targets before fetching", async () => {
     const signal = await resolveUrlSignal("https://localhost/product", {
       mode: "metadata",
@@ -157,5 +229,49 @@ describe("url parser", () => {
       timeoutMs: 500,
       maxBytes: 1024
     });
+  });
+
+  it("reads external URL parser config from environment", () => {
+    expect(
+      readExternalUrlParserConfigFromEnv({
+        [urlParserEnvVars.parserMode]: "external",
+        [urlParserEnvVars.externalEndpoint]: "https://parser.example.test/parse",
+        [urlParserEnvVars.externalApiKey]: "parser-key",
+        [urlParserEnvVars.externalTimeoutMs]: "750"
+      })
+    ).toEqual({
+      parserMode: "external",
+      endpoint: "https://parser.example.test/parse",
+      apiKey: "parser-key",
+      timeoutMs: 750
+    });
+  });
+
+  it("creates a configured resolver with the external URL parser", async () => {
+    const resolver = createConfiguredUrlSignalResolver(
+      {
+        [urlParserEnvVars.parserMode]: "external",
+        [urlParserEnvVars.externalEndpoint]: "https://parser.example.test/parse"
+      },
+      async () =>
+        new Response(
+          JSON.stringify({
+            summaryText: "External summary with developers hero features pricing"
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json"
+            }
+          }
+        )
+    );
+    const signal = await resolver("https://example.com/product");
+
+    expect(signal).toMatchObject({
+      sourceType: "external_url_parser",
+      fallbackReason: null
+    });
+    expect(signal.summaryText).toContain("External summary");
   });
 });
