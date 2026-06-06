@@ -111,9 +111,12 @@ npm install
 npm test
 npm run typecheck
 npm run build
+npm run dev
 npm start
 npm run start:http
 ```
+
+`npm run dev` 会启动调试用 HTTP MCP server，并在 `src/` 或 `tsconfig.json` 变化后自动重新编译和重启。默认地址仍是 `http://127.0.0.1:3010/mcp`，可继续使用 `SPEC_DESIGN_MCP_HTTP_*` 环境变量覆盖。
 
 CI 使用 GitHub Actions 跑同一组核心验证：`npm ci`、`npm run typecheck`、`npm test`、`npm run build`。
 

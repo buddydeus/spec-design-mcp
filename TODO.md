@@ -23,6 +23,7 @@
 
 - stdio MCP Server 入口
 - stateless Streamable HTTP MCP Server 入口
+- HTTP dev 调试脚本：`npm run dev`
 - HTTP Bearer auth、CORS allowlist 与基础限流
 - 官方 MCP SDK tool 注册
 - MVP 配置样例：`.env.example`
@@ -284,6 +285,22 @@
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 - stdio smoke、HTTP auth smoke、MVP HTTP client walkthrough 通过。
 
+### 阶段 12：补齐本地 dev 调试脚本
+
+状态：已完成
+
+目标：
+
+- 已新增 `npm run dev`，用于本地调试 HTTP MCP server。
+- 已新增 `scripts/dev-http.mjs`，负责编译、启动 HTTP server，并在 `src/` 或 `tsconfig.json` 变化后自动重建和重启。
+- 已恢复 `package.json` 的 ESM 配置，确保编译后的 `dist/src/*.js` 可被 Node 正常启动。
+- 已在 README 和 TODO 中记录调试入口。
+
+验收：
+
+- `npm run build` 通过。
+- `npm run dev` 可完成首次编译并启动 HTTP MCP server。
+
 ## 当前下一步
 
-阶段 11 已完成。以可以进行 MVP 为标准，当前剩余项已降为非阻塞增强：真实浏览器 screenshot 导出、stateful HTTP transport session 管理、外部 URL parser 响应契约进一步收敛，以及把当前分支推送/发版。
+阶段 12 已完成。以可以进行 MVP 为标准，当前剩余项已降为非阻塞增强：真实浏览器 screenshot 导出、stateful HTTP transport session 管理、外部 URL parser 响应契约进一步收敛，以及把当前分支推送/发版。

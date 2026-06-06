@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "dev": "node scripts/dev-http.mjs",
     "start": "node dist/src/server.js",
     "start:http": "node dist/src/http-server.js",
     "test": "vitest run",
