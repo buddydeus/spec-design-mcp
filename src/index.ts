@@ -13,6 +13,7 @@ export * from "./tools/confirm-tools.js";
 export * from "./tools/export-tools.js";
 export * from "./tools/clarify-tools.js";
 export * from "./tools/session-tools.js";
+export * from "./mcp/server.js";
 
 /** 中文说明：用于标识当前导出的契约集合。 */
 export const schemas = {

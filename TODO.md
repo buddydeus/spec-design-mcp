@@ -10,14 +10,17 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：工作区干净
+- 最近检查：阶段 1 已完成，待开始阶段 2
 - 最近验证：
-  - `npm test`：25 个测试文件、41 个测试通过
+  - `npm test`：26 个测试文件、43 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
+  - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
 
 当前已实现能力：
 
+- stdio MCP Server 入口
+- 官方 MCP SDK tool 注册
 - 创建 session
 - 追加 `text` / `url` 输入
 - rule-based clarify
@@ -30,8 +33,7 @@
 
 当前主要边界：
 
-- 当前更像可接入 MCP 的核心库 / 本地 handler 层，还不是完整可启动的 MCP Server。
-- 尚未接入官方 MCP SDK server 入口。
+- 当前只提供本地 stdio MCP Server，尚未提供 HTTP transport。
 - 生成、澄清、修订仍是 rule-based，不是真实 LLM provider。
 - URL 解析能力较基础。
 - 设计产物以结构可用为主，不追求高保真视觉。
@@ -54,13 +56,13 @@
 
 ### 阶段 1：补齐真正 MCP Server 入口
 
-状态：待开始
+状态：已完成
 
 目标：
 
-- 引入官方 MCP SDK。
-- 增加可启动的 server 入口，例如 `src/server.ts`。
-- 将现有 7 个 handler 注册为 MCP tools：
+- 已引入官方 MCP SDK。
+- 已增加可启动的 stdio server 入口：`src/server.ts`。
+- 已将现有 7 个 handler 注册为 MCP tools：
   - `design.session.create`
   - `design.session.append_input`
   - `design.intent.clarify`
@@ -68,14 +70,15 @@
   - `design.design.revise`
   - `design.design.confirm`
   - `design.export.package`
-- 在 `package.json` 增加启动脚本和必要的 `bin` 配置。
-- 增加最小 server smoke 或 tool registration 测试。
+- 已在 `package.json` 增加 `start` 脚本和 `bin` 配置。
+- 已增加 MCP server tool registration 测试。
 
 验收：
 
 - MCP server 可以通过本地 stdio 方式启动。
 - 现有 handler 行为不回退。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
+- stdio smoke 通过：SDK client 可拉起 `dist/src/server.js` 并列出全部 7 个 tools。
 
 ### 阶段 2：更新和收敛文档
 
@@ -151,4 +154,4 @@
 
 ## 当前下一步
 
-开始阶段 1：补齐真正 MCP Server 入口。
+开始阶段 2：更新和收敛文档。
