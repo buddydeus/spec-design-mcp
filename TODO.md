@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 4 已完成，待开始阶段 5
+- 最近检查：阶段 5 已完成，当前 5 阶段计划收尾
 - 最近验证：
-  - `npm test`：29 个测试文件、50 个测试通过
+  - `npm test`：30 个测试文件、52 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -33,6 +33,9 @@
 - confirm 指定设计版本
 - export 最小交付包
 - 三组 milestone 7-8 端到端 smoke 样例
+- 可配置 runtime root：`SPEC_DESIGN_MCP_RUNTIME_DIR`
+- GitHub Actions CI
+- 发布前检查清单
 
 当前主要边界：
 
@@ -45,7 +48,7 @@
 已知非阻塞提醒：
 
 - `node:sqlite` 会输出 `ExperimentalWarning`，当前阶段可接受。
-- `.npmrc` 中部分 npm 配置会触发未来版本兼容性 warning，后续工程化阶段处理。
+- `node:sqlite` 仍是 experimental runtime 依赖。
 
 ## 执行规则
 
@@ -139,22 +142,22 @@
 
 ### 阶段 5：工程化收尾
 
-状态：待开始
+状态：已完成
 
 目标：
 
-- 清理 `.npmrc` 过期配置 warning。
-- 增加 CI 建议或配置，至少覆盖 test/typecheck/build。
-- 将 `.runtime` 路径做成可配置项。
-- 补充发布前检查清单。
+- 已清理 `.npmrc` 过期配置 warning。
+- 已增加 GitHub Actions CI，覆盖 `npm ci`、`npm run typecheck`、`npm test`、`npm run build`。
+- 已将 `.runtime` 路径做成可配置项：`SPEC_DESIGN_MCP_RUNTIME_DIR`。
+- 已补充发布前检查清单：`docs/release-checklist.md`。
 
 验收：
 
-- 常用命令 warning 明显减少。
+- 常用命令不再输出旧 `.npmrc` unknown config warning。
 - 本地和 CI 验证路径一致。
 - 运行时目录配置清晰。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
 ## 当前下一步
 
-开始阶段 5：工程化收尾。
+5 阶段计划已完成。下一轮建议从真实 LLM provider、URL 抓取治理、截图/视觉 diff 或 HTTP transport 中选择一个新阶段。

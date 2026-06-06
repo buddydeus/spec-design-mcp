@@ -1,6 +1,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
+import { getRuntimePaths } from "../lib/runtime/paths.js";
+
 /** 中文说明：写入单个本地产物文件时需要的参数。 */
 export interface ArtifactWriteInput {
   relativePath: string;
@@ -15,7 +17,8 @@ export async function writeArtifactFile(
   input: ArtifactWriteInput,
   rootDir = process.cwd()
 ): Promise<string> {
-  const filePath = resolve(rootDir, ".runtime", "artifacts", input.relativePath);
+  const paths = getRuntimePaths(rootDir);
+  const filePath = resolve(paths.artifactsDir, input.relativePath);
 
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, input.contents, "utf8");

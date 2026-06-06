@@ -11,6 +11,7 @@ import {
   createSessionRepository,
   type SessionRepository
 } from "../../storage/session-repository.js";
+import { getArtifactRef } from "../../lib/runtime/paths.js";
 import { getNowIsoString } from "../../lib/runtime/ids.js";
 import { buildAnnotationManifest } from "./annotation-builder.js";
 import { buildBindingSchema } from "./binding-builder.js";
@@ -71,27 +72,27 @@ export async function createExportService(
       const artifactItems = [
         {
           artifactType: "artifact-manifest.json" as const,
-          filePath: `.runtime/artifacts/${basePath}/artifact-manifest.json`
+          filePath: getArtifactRef(`${basePath}/artifact-manifest.json`)
         },
         {
           artifactType: "design-ast.json" as const,
-          filePath: `.runtime/artifacts/${basePath}/design-ast.json`
+          filePath: getArtifactRef(`${basePath}/design-ast.json`)
         },
         {
           artifactType: "compiled.html" as const,
-          filePath: `.runtime/artifacts/${basePath}/compiled.html`
+          filePath: getArtifactRef(`${basePath}/compiled.html`)
         },
         {
           artifactType: "compiled.css" as const,
-          filePath: `.runtime/artifacts/${basePath}/compiled.css`
+          filePath: getArtifactRef(`${basePath}/compiled.css`)
         },
         {
           artifactType: "annotation-manifest.json" as const,
-          filePath: `.runtime/artifacts/${basePath}/annotation-manifest.json`
+          filePath: getArtifactRef(`${basePath}/annotation-manifest.json`)
         },
         {
           artifactType: "binding.schema.json" as const,
-          filePath: `.runtime/artifacts/${basePath}/binding.schema.json`
+          filePath: getArtifactRef(`${basePath}/binding.schema.json`)
         }
       ];
       const artifactManifest = artifactManifestSchema.parse({
@@ -128,7 +129,7 @@ export async function createExportService(
       await runtimeSessionRepository.markExported(validatedParams.sessionId);
 
       return exportPackageResultSchema.parse({
-        deliveryPackageRef: `.runtime/artifacts/${basePath}/artifact-manifest.json`,
+        deliveryPackageRef: getArtifactRef(`${basePath}/artifact-manifest.json`),
         artifactManifest,
         artifacts: artifactItems.map((item) => item.artifactType)
       });

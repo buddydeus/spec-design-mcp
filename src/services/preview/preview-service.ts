@@ -1,4 +1,5 @@
 import { designAstSchema } from "../../schemas/ast.js";
+import { getArtifactRef } from "../../lib/runtime/paths.js";
 import { writeArtifactFile } from "../../storage/file-artifact-store.js";
 import { renderPreviewHtml } from "./html-renderer.js";
 
@@ -43,7 +44,7 @@ export async function createPreviewService(): Promise<PreviewService> {
       });
 
       return {
-        previewRef: `.runtime/artifacts/${basePath}/preview.html`,
+        previewRef: getArtifactRef(`${basePath}/preview.html`),
         previewArtifacts: ["preview.html", "section-summary.json"]
       };
     },

@@ -62,6 +62,8 @@ npm run build
 npm start
 ```
 
+CI 使用 GitHub Actions 跑同一组核心验证：`npm ci`、`npm run typecheck`、`npm test`、`npm run build`。
+
 只跑最小交付回归：
 
 ```bash
@@ -172,6 +174,14 @@ npm start
 
 `artifact-manifest.json` 是最小交付包的唯一入口。
 
+如需把运行时数据放到仓库外部，可设置：
+
+```bash
+SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
+```
+
+设置后 SQLite 与 artifacts 都会写入该目录；导出的 artifact 引用会返回对应绝对路径。
+
 ## 测试结构
 
 - `tests/services/`
@@ -180,6 +190,10 @@ npm start
   - tool handler 输入输出测试
 - `tests/storage/`
   - SQLite / 文件落盘相关测试
+- `tests/providers/`
+  - intent provider 与 URL parser 测试
+- `tests/lib/`
+  - runtime path 与错误模型测试
 - `tests/smoke/`
   - 里程碑级端到端 smoke
 - `tests/mcp/`
@@ -193,3 +207,5 @@ npm start
 - 接入真实 LLM provider
 - 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式
 - 增强 URL 抓取治理或外部 parser 接入
+
+发布或交付前检查见 `docs/release-checklist.md`。
