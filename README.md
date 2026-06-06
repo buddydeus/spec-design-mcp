@@ -16,6 +16,7 @@
 - export 最小静态交付包
 - stdio MCP Server 入口
 - 官方 MCP SDK tool 注册
+- preview/export 共享基础编译核心
 
 ## 当前 `v0` 不做
 
@@ -24,7 +25,6 @@
 - 可视化编辑器
 - 高保真设计还原
 - screenshot 导出
-- preview/export 统一编译管线重构
 
 ## 环境要求
 
@@ -105,6 +105,19 @@ npm start
 
 对应本地 handler 与 schema 导出入口统一聚合在 `src/index.ts`。MCP 注册工厂位于 `src/mcp/server.ts`，stdio 启动入口位于 `src/server.ts`。
 
+## 编译管线
+
+`DesignDOMAST` 会先编译为共享的 `CompiledDocument` 中间结构，再派生 preview/export 所需产物。
+
+- `src/services/compiler/`
+  - 统一 AST 编译、HTML 片段渲染、基础 CSS 规则
+- `src/services/preview/`
+  - 负责 preview 页面壳层和 `preview.html` / `section-summary.json` 落盘
+- `src/services/export/`
+  - 负责 export 页面壳层、CSS、manifest 和交付包落盘
+
+这样可以保证 preview/export 的节点层级、`data-node-id` 和基础标签映射来自同一套结构规则。
+
 ## 最小流程
 
 1. `createSessionTool`
@@ -165,4 +178,4 @@ npm start
 - 增加更多固定样例
 - 优化导出样式质量
 - 接入真实 LLM provider
-- 按 `.feats/mileston-7-8-C.md` 统一 preview/export 编译管线
+- 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式

@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 2 已完成，待开始阶段 3
+- 最近检查：阶段 3 已完成，待开始阶段 4
 - 最近验证：
-  - `npm test`：26 个测试文件、43 个测试通过
+  - `npm test`：27 个测试文件、45 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -25,6 +25,7 @@
 - 追加 `text` / `url` 输入
 - rule-based clarify
 - 生成受限 `DesignDOMAST`
+- 共享 `CompiledDocument` 编译中间结构
 - 生成本地 preview
 - 基于自然语言 revise 并生成新版本
 - confirm 指定设计版本
@@ -37,7 +38,7 @@
 - 生成、澄清、修订仍是 rule-based，不是真实 LLM provider。
 - URL 解析能力较基础。
 - 设计产物以结构可用为主，不追求高保真视觉。
-- preview/export 当前是两条相邻编译链路，后续可能出现结构漂移。
+- preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
 
 已知非阻塞提醒：
 
@@ -99,15 +100,15 @@
 
 ### 阶段 3：统一 preview/export 编译管线
 
-状态：待开始
+状态：已完成
 
 目标：
 
-- 参考 `.feats/mileston-7-8-C.md` 的方案 C。
-- 先抽公共 HTML 节点渲染，降低 preview/export 重复逻辑。
-- 再引入统一中间结构，例如 `CompiledDocument`。
-- 让 annotation、binding、HTML 输出逐步从统一编译结果派生。
-- 增加结构一致性测试，防止 preview/export 漂移。
+- 已参考 `.feats/mileston-7-8-C.md` 的方案 C。
+- 已抽公共 HTML 节点渲染，降低 preview/export 重复逻辑。
+- 已引入统一中间结构 `CompiledDocument`。
+- 已让 annotation、binding、HTML 输出从统一编译结果派生。
+- 已增加结构一致性测试，防止 preview/export 漂移。
 
 验收：
 
@@ -154,4 +155,4 @@
 
 ## 当前下一步
 
-开始阶段 3：统一 preview/export 编译管线。
+开始阶段 4：增强真实可用性。
