@@ -11,6 +11,7 @@ export type FetchLike = (
     method: "POST";
     headers: Record<string, string>;
     body: string;
+    signal?: AbortSignal;
   }
 ) => Promise<{
   ok: boolean;
@@ -18,10 +19,13 @@ export type FetchLike = (
   text(): Promise<string>;
 }>;
 
+const defaultLlmTimeoutMs = 30_000;
+
 interface OpenAiCompatibleIntentProviderOptions {
   endpoint?: string;
   model?: string;
   apiKey?: string;
+  timeoutMs?: number;
   fetchFn: FetchLike;
   fallbackProvider: IntentProvider;
 }
@@ -171,29 +175,42 @@ export function createOpenAiCompatibleIntentProvider(
           headers.Authorization = `Bearer ${options.apiKey}`;
         }
 
-        const response = await options.fetchFn(options.endpoint, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            model: options.model,
-            temperature: 0,
-            response_format: { type: "json_object" },
-            messages: [
-              {
-                role: "system",
-                content: "You extract structured landing page design intent for an MCP server."
-              },
-              {
-                role: "user",
-                content: buildPrompt(input)
-              }
-            ]
-          })
-        });
+        const timeoutMs = options.timeoutMs ?? defaultLlmTimeoutMs;
+        const abortController = new AbortController();
+        const timeout = setTimeout(() => abortController.abort(), timeoutMs);
+
+        let response: Awaited<ReturnType<FetchLike>>;
+
+        try {
+          response = await options.fetchFn(options.endpoint, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              model: options.model,
+              temperature: 0,
+              response_format: { type: "json_object" },
+              messages: [
+                {
+                  role: "system",
+                  content: "You extract structured landing page design intent for an MCP server."
+                },
+                {
+                  role: "user",
+                  content: buildPrompt(input)
+                }
+              ]
+            }),
+            signal: abortController.signal
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
         const responseText = await response.text();
 
         if (!response.ok) {
-          throw new Error(`LLM request failed with status ${response.status}: ${responseText}`);
+          const truncatedBody = responseText.slice(0, 200);
+          throw new Error(`LLM request failed with status ${response.status}: ${truncatedBody}`);
         }
 
         const payload = parseChatCompletionContent(responseText);

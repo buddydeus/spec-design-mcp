@@ -118,4 +118,28 @@ describe("AST compiler", () => {
       "color: #ffffff; background-color: #0f172a"
     );
   });
+
+  it("escapes user-controlled text in rendered HTML fragments", () => {
+    const compiledDocument = compileDesignAst({
+      ...designAst,
+      root: {
+        ...designAst.root,
+        children: [
+          {
+            ...designAst.root.children[0]!,
+            children: [
+              {
+                ...designAst.root.children[0]!.children[0]!,
+                text: '<img src=x onerror="alert(1)">'
+              }
+            ]
+          }
+        ]
+      }
+    });
+    const htmlFragment = renderHtmlFragment(compiledDocument.root);
+
+    expect(htmlFragment).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
+    expect(htmlFragment).not.toContain("<img src=x");
+  });
 });

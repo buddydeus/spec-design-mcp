@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
 /** 中文说明：URL 输入在本地规则解析后的最小语义结果。 */
@@ -131,7 +132,86 @@ export function createConfiguredUrlSignalResolver(
     });
 }
 
-function rejectUnsafeFetchTarget(parsed: URL): string | null {
+const externalParserMaxResponseBytes = 64_000;
+
+function isPrivateOrLoopbackIPv4(first: number, second: number): boolean {
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    first >= 224
+  );
+}
+
+function parseIpv4MappedAddress(address: string): [number, number, number, number] | null {
+  const dotted = address.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+
+  if (dotted) {
+    const parts = dotted[1]!.split(".").map((part) => Number.parseInt(part, 10));
+
+    if (parts.length === 4) {
+      return parts as [number, number, number, number];
+    }
+  }
+
+  const hex = address.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+
+  if (hex) {
+    const high = Number.parseInt(hex[1]!, 16);
+    const low = Number.parseInt(hex[2]!, 16);
+    const combined = (high << 16) | low;
+
+    return [
+      (combined >>> 24) & 0xff,
+      (combined >>> 16) & 0xff,
+      (combined >>> 8) & 0xff,
+      combined & 0xff
+    ];
+  }
+
+  return null;
+}
+
+function rejectResolvedAddress(address: string): string | null {
+  const ipv4Mapped = parseIpv4MappedAddress(address);
+
+  if (ipv4Mapped) {
+    const [first, second] = ipv4Mapped;
+
+    return isPrivateOrLoopbackIPv4(first, second)
+      ? "URL fetch rejected private or loopback IPv4 target; using hostname and path only."
+      : null;
+  }
+
+  const ipVersion = isIP(address);
+
+  if (ipVersion === 4) {
+    const [first = 0, second = 0] = address.split(".").map((part) => Number.parseInt(part, 10));
+
+    return isPrivateOrLoopbackIPv4(first, second)
+      ? "URL fetch rejected private or loopback IPv4 target; using hostname and path only."
+      : null;
+  }
+
+  if (ipVersion === 6) {
+    const normalized = address.toLowerCase();
+    const isPrivate =
+      normalized === "::1" ||
+      normalized.startsWith("fc") ||
+      normalized.startsWith("fd") ||
+      normalized.startsWith("fe80:");
+
+    return isPrivate ? "URL fetch rejected private or loopback IPv6 target; using hostname and path only." : null;
+  }
+
+  return null;
+}
+
+async function rejectUnsafeFetchTarget(parsed: URL): Promise<string | null> {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     return "URL fetch supports only http and https targets; using hostname and path only.";
   }
@@ -143,33 +223,23 @@ function rejectUnsafeFetchTarget(parsed: URL): string | null {
     return "URL fetch rejected localhost target; using hostname and path only.";
   }
 
-  const ipVersion = isIP(hostAddress);
+  const literalRejection = rejectResolvedAddress(hostAddress);
 
-  if (ipVersion === 4) {
-    const [first = 0, second = 0] = hostAddress.split(".").map((part) => Number.parseInt(part, 10));
-    const isPrivate =
-      first === 0 ||
-      first === 10 ||
-      first === 127 ||
-      (first === 169 && second === 254) ||
-      (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168) ||
-      first >= 224;
-
-    return isPrivate ? "URL fetch rejected private or loopback IPv4 target; using hostname and path only." : null;
+  if (literalRejection) {
+    return literalRejection;
   }
 
-  if (ipVersion === 6) {
-    const isPrivate =
-      hostAddress === "::1" ||
-      hostAddress.startsWith("fc") ||
-      hostAddress.startsWith("fd") ||
-      hostAddress.startsWith("fe80:");
-
-    return isPrivate ? "URL fetch rejected private or loopback IPv6 target; using hostname and path only." : null;
+  if (isIP(hostAddress) !== 0) {
+    return null;
   }
 
-  return null;
+  try {
+    const { address } = await lookup(hostAddress, { verbatim: true });
+
+    return rejectResolvedAddress(address);
+  } catch {
+    return "URL fetch rejected unresolvable hostname; using hostname and path only.";
+  }
 }
 
 function isSupportedHtmlContentType(contentType: string | null): boolean {
@@ -337,15 +407,16 @@ async function resolveWithExternalParser(
       }),
       signal: abortController.signal
     });
-    const responseText = await response.text();
-
     if (!response.ok) {
+      await readLimitedResponseText(response, externalParserMaxResponseBytes);
+
       return {
         ...baseSignal,
         fallbackReason: `External URL parser failed with status ${response.status}; using local URL signal.`
       };
     }
 
+    const responseText = await readLimitedResponseText(response, externalParserMaxResponseBytes);
     const payload = JSON.parse(responseText) as unknown;
     const summaryParts = uniqueTextParts([
       baseSignal.summaryText,
@@ -403,7 +474,7 @@ export async function resolveUrlSignal(
   }
 
   const parsed = new URL(baseSignal.normalizedUrl);
-  const rejectedReason = rejectUnsafeFetchTarget(parsed);
+  const rejectedReason = await rejectUnsafeFetchTarget(parsed);
 
   if (rejectedReason) {
     return {

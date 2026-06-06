@@ -24,6 +24,8 @@ export interface GenerateService {
 /**
  * 中文说明：
  * generate service 负责把 ready intent 转成首版 AST，并持久化为 v1 版本。
+ * @throws {Error} `CLARIFICATION_REQUIRED` — intent 尚未 ready
+ * @throws {Error} `VERSION_CONFLICT` — 会话已存在 v1 设计版本
  */
 export async function createGenerateService(
   sessionRepository?: SessionRepository,
@@ -44,6 +46,15 @@ export async function createGenerateService(
 
       if (!clarifyResult.isReady) {
         throw new Error("CLARIFICATION_REQUIRED");
+      }
+
+      const existingVersion = await runtimeVersionRepository.getVersion(
+        validatedParams.sessionId,
+        "v1"
+      );
+
+      if (existingVersion) {
+        throw new Error("VERSION_CONFLICT");
       }
 
       const designAst = buildDesignAst(clarifyResult.interimIntentModel);

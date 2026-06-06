@@ -95,41 +95,41 @@ SPEC_DESIGN_MCP_URL_PARSER_TIMEOUT_MS=2000
 ## 环境要求
 
 - Node.js 22+
-- npm
+- pnpm 10+
 
 项目当前使用 `node:sqlite`，运行测试时会看到 `ExperimentalWarning`，这是当前阶段可接受的已知现象。
 
 ## 安装
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## 常用命令
 
 ```bash
-npm test
-npm run typecheck
-npm run build
-npm run dev
-npm start
-npm run start:http
+pnpm test
+pnpm run typecheck
+pnpm run build
+pnpm run dev
+pnpm start
+pnpm run start:http
 ```
 
 `npm run dev` 会启动调试用 HTTP MCP server，并在 `src/` 或 `tsconfig.json` 变化后自动重新编译和重启。默认地址仍是 `http://127.0.0.1:3010/mcp`，可继续使用 `SPEC_DESIGN_MCP_HTTP_*` 环境变量覆盖。
 
-CI 使用 GitHub Actions 跑同一组核心验证：`npm ci`、`npm run typecheck`、`npm test`、`npm run build`。
+CI 使用 GitHub Actions 跑同一组核心验证：`pnpm install --frozen-lockfile`、`pnpm run typecheck`、`pnpm test`、`pnpm run build`。
 
 只跑最小交付回归：
 
 ```bash
-npm test -- tests/smoke/milestone-7-8.test.ts
+pnpm test -- tests/smoke/milestone-7-8.test.ts
 ```
 
 只跑 MCP server 注册测试：
 
 ```bash
-npm test -- tests/mcp/server.test.ts
+pnpm test -- tests/mcp/server.test.ts
 ```
 
 ## MCP Server
@@ -139,14 +139,14 @@ npm test -- tests/mcp/server.test.ts
 stdio 入口构建后可直接启动：
 
 ```bash
-npm run build
+pnpm run build
 node dist/src/server.js
 ```
 
 `package.json` 同时提供：
 
 ```bash
-npm start
+pnpm start
 ```
 
 本地 MCP 客户端可按进程方式配置：
@@ -168,8 +168,8 @@ npm start
 HTTP 入口构建后可直接启动：
 
 ```bash
-npm run build
-npm run start:http
+pnpm run build
+pnpm run start:http
 ```
 
 默认监听：

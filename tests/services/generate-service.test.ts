@@ -52,4 +52,32 @@ describe("generate service", () => {
     sessionService.close();
     generateService.close();
   });
+
+  it("rejects duplicate generate when v1 already exists", async () => {
+    const sessionService = await createSessionService();
+    const generateService = await createGenerateService();
+    const session = await sessionService.createSession({
+      projectName: "Acme",
+      goal: "Landing page"
+    });
+
+    await sessionService.appendInput({
+      sessionId: session.sessionId,
+      inputs: [
+        {
+          type: "text",
+          text: "Create a SaaS landing page for developers with a hero, features, pricing and primary CTA Start Free Trial"
+        }
+      ]
+    });
+
+    await generateService.generate({ sessionId: session.sessionId });
+
+    await expect(generateService.generate({ sessionId: session.sessionId })).rejects.toThrow(
+      "VERSION_CONFLICT"
+    );
+
+    sessionService.close();
+    generateService.close();
+  });
 });

@@ -176,6 +176,18 @@ function getRateLimitKey(req: IncomingMessage): string {
   return req.socket.remoteAddress ?? "unknown";
 }
 
+function pruneExpiredRateLimits(
+  rateLimits: Map<string, RateLimitEntry>,
+  now: number,
+  windowMs: number
+): void {
+  for (const [key, entry] of rateLimits) {
+    if (now - entry.windowStartedAt >= windowMs) {
+      rateLimits.delete(key);
+    }
+  }
+}
+
 function isRateLimited(
   req: IncomingMessage,
   rateLimits: Map<string, RateLimitEntry>,
@@ -190,6 +202,7 @@ function isRateLimited(
   const existing = rateLimits.get(key);
 
   if (!existing || now - existing.windowStartedAt >= options.rateLimitWindowMs) {
+    pruneExpiredRateLimits(rateLimits, now, options.rateLimitWindowMs);
     rateLimits.set(key, {
       windowStartedAt: now,
       requestCount: 1

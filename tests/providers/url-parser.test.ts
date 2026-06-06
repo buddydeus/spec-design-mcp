@@ -198,6 +198,33 @@ describe("url parser", () => {
     expect(signal.fallbackReason).toContain("private or loopback IPv6");
   });
 
+  it("rejects IPv4-mapped loopback targets before fetching", async () => {
+    const signal = await resolveUrlSignal("http://[::ffff:127.0.0.1]/product", {
+      mode: "metadata",
+      fetchFn: async () => {
+        throw new Error("fetch should not be called");
+      }
+    });
+
+    expect(signal.sourceType).toBe("url_metadata");
+    expect(signal.fallbackReason).toContain("private or loopback IPv4");
+  });
+
+  it("rejects CGNAT IPv4 targets before fetching", async () => {
+    const signal = await resolveUrlSignal("http://100.64.0.1/product", {
+      mode: "metadata",
+      fetchFn: async () => {
+        throw new Error("fetch should not be called");
+      }
+    });
+
+    expect(signal).toMatchObject({
+      normalizedUrl: "http://100.64.0.1/product",
+      sourceType: "url_metadata"
+    });
+    expect(signal.fallbackReason).toContain("private or loopback IPv4");
+  });
+
   it("falls back when fetched content is not HTML", async () => {
     const signal = await resolveUrlSignal("https://example.com/feed.json", {
       mode: "metadata",
