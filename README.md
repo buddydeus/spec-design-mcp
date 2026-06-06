@@ -1,8 +1,8 @@
 # Spec Design MCP
 
-面向 AI Agent 的 `v0` 设计生成最小闭环实现。
+面向 AI Agent 的 `v0` 设计生成最小闭环 MCP Server 实现。
 
-当前版本重点不是设计能力上限，而是契约稳定和端到端可交付。项目已经支持从需求输入到最小交付包导出的完整链路，适合作为原型验证、集成联调和回归测试基线。
+当前版本重点不是设计能力上限，而是契约稳定和端到端可交付。项目已经支持从需求输入到最小交付包导出的完整链路，并可通过 stdio MCP Server 被本地 MCP 客户端拉起，适合作为原型验证、集成联调和回归测试基线。
 
 ## 当前 `v0` 能力
 
@@ -14,6 +14,8 @@
 - 基于自然语言做 revise
 - confirm 某个设计版本
 - export 最小静态交付包
+- stdio MCP Server 入口
+- 官方 MCP SDK tool 注册
 
 ## 当前 `v0` 不做
 
@@ -43,6 +45,7 @@ npm install
 npm test
 npm run typecheck
 npm run build
+npm start
 ```
 
 只跑最小交付回归：
@@ -51,9 +54,46 @@ npm run build
 npm test -- tests/smoke/milestone-7-8.test.ts
 ```
 
+只跑 MCP server 注册测试：
+
+```bash
+npm test -- tests/mcp/server.test.ts
+```
+
+## MCP Server
+
+项目使用官方 `@modelcontextprotocol/sdk` 暴露 stdio MCP Server。构建后可直接启动：
+
+```bash
+npm run build
+node dist/src/server.js
+```
+
+`package.json` 同时提供：
+
+```bash
+npm start
+```
+
+本地 MCP 客户端可按进程方式配置：
+
+```json
+{
+  "mcpServers": {
+    "spec-design-mcp": {
+      "command": "node",
+      "args": ["/Users/buddy/Project/buddydeus/spec-design-mcp/dist/src/server.js"],
+      "cwd": "/Users/buddy/Project/buddydeus/spec-design-mcp"
+    }
+  }
+}
+```
+
+若在其他目录使用，请把 `args[0]` 与 `cwd` 换成实际仓库路径。
+
 ## 对外工具
 
-当前 `v0` 暴露以下工具入口：
+当前 `v0` 暴露以下 MCP tools：
 
 - `design.session.create`
 - `design.session.append_input`
@@ -63,7 +103,7 @@ npm test -- tests/smoke/milestone-7-8.test.ts
 - `design.design.confirm`
 - `design.export.package`
 
-对应导出入口统一聚合在 `src/index.ts`。
+对应本地 handler 与 schema 导出入口统一聚合在 `src/index.ts`。MCP 注册工厂位于 `src/mcp/server.ts`，stdio 启动入口位于 `src/server.ts`。
 
 ## 最小流程
 
@@ -74,6 +114,16 @@ npm test -- tests/smoke/milestone-7-8.test.ts
 5. `reviseDesignTool`
 6. `confirmDesignTool`
 7. `exportPackageTool`
+
+通过 MCP 调用时对应工具名为：
+
+1. `design.session.create`
+2. `design.session.append_input`
+3. `design.intent.clarify`
+4. `design.design.generate`
+5. `design.design.revise`
+6. `design.design.confirm`
+7. `design.export.package`
 
 ## 运行时目录
 
@@ -105,8 +155,10 @@ npm test -- tests/smoke/milestone-7-8.test.ts
   - SQLite / 文件落盘相关测试
 - `tests/smoke/`
   - 里程碑级端到端 smoke
+- `tests/mcp/`
+  - MCP server 注册与结构化返回测试
 
-当前 `Milestone 7-8` smoke 已覆盖 `2` 组固定样例，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。
+当前 `Milestone 7-8` smoke 已覆盖 `2` 组固定样例，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册与结构化 tool result 包装。
 
 ## 后续优化
 
