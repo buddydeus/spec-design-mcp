@@ -20,6 +20,7 @@
 - LLM-compatible intent provider 接口与 rule-based fallback
 - 可配置 OpenAI-compatible LLM intent provider
 - URL metadata 降级诊断
+- 可选受限 URL HTML metadata 抓取
 
 ## 当前 `v0` 不做
 
@@ -29,6 +30,7 @@
 - 高保真设计还原
 - screenshot 导出
 - 默认启用真实 LLM provider
+- 默认抓取远端 URL 内容
 
 ## Intent Provider
 
@@ -41,7 +43,7 @@
 - `src/providers/llm/openai-compatible-intent-provider.ts`
   - 可选真实 LLM provider，读取 chat completion JSON 响应
 - `src/providers/parser/url-parser.ts`
-  - 不抓取远端内容，只从 hostname/path 派生弱信号，并返回 `fallbackReason`
+  - 默认只从 hostname/path 派生弱信号；可选抓取受限 HTML metadata，并返回 `fallbackReason`
 
 启用真实 LLM intent provider：
 
@@ -53,6 +55,16 @@ SPEC_DESIGN_MCP_LLM_API_KEY=your-api-key
 ```
 
 `SPEC_DESIGN_MCP_LLM_API_KEY` 可选；如果你的 endpoint 不需要 Bearer token，可以不设置。
+
+启用受限 URL metadata 抓取：
+
+```bash
+SPEC_DESIGN_MCP_URL_FETCH=metadata
+SPEC_DESIGN_MCP_URL_FETCH_TIMEOUT_MS=2000
+SPEC_DESIGN_MCP_URL_FETCH_MAX_BYTES=64000
+```
+
+URL 抓取默认关闭。开启后仅请求 `http` / `https`，拒绝 localhost、loopback 和常见 private IP 目标，只接受 HTML / XHTML 响应，并只读取限定字节数内的 `<title>`、`description`、`og:description` 和首个 `<h1>`。
 
 ## 环境要求
 
@@ -218,7 +230,7 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 ## 后续优化
 
 - 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式
-- 增强 URL 抓取治理或外部 parser 接入
+- 外部 URL parser 接入
 - 增加 HTTP transport
 
 发布或交付前检查见 `docs/release-checklist.md`。

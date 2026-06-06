@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import type { IntentProvider } from "../../providers/llm/intent-provider.js";
 import { createConfiguredIntentProvider } from "../../providers/llm/provider-config.js";
-import { parseUrlSignal } from "../../providers/parser/url-parser.js";
+import {
+  createConfiguredUrlSignalResolver,
+  type ParsedUrlSignal
+} from "../../providers/parser/url-parser.js";
 import { createSessionRepository, type SessionRepository } from "../../storage/session-repository.js";
 import {
   clarifyIntentParamsSchema,
@@ -24,7 +27,8 @@ export interface ClarifyService {
  */
 export async function createClarifyService(
   repository?: SessionRepository,
-  intentProvider: IntentProvider = createConfiguredIntentProvider()
+  intentProvider: IntentProvider = createConfiguredIntentProvider(),
+  urlSignalResolver: (input: string) => Promise<ParsedUrlSignal> = createConfiguredUrlSignalResolver()
 ): Promise<ClarifyService> {
   const sessionRepository = repository ?? (await createSessionRepository());
 
@@ -42,11 +46,12 @@ export async function createClarifyService(
         .map((input) => input.text);
       const urlInputs = session.inputs
         .filter((input): input is Extract<(typeof session.inputs)[number], { type: "url" }> => input.type === "url")
-        .map((input) => parseUrlSignal(input.url));
+        .map((input) => input.url);
+      const urlSignals = await Promise.all(urlInputs.map((input) => urlSignalResolver(input)));
       const intentResult = await intentProvider.extractIntent({
         goal: session.goal,
         textInputs,
-        urlSignals: urlInputs
+        urlSignals
       });
 
       return clarifyIntentResultSchema.parse({

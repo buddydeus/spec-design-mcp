@@ -12,7 +12,7 @@ export const designVersionSchema = z.string().regex(/^v\d+$/);
 /** 中文说明：节点 ID 统一收敛到 node_ 前缀，避免下游猜测来源。 */
 export const nodeIdSchema = z.string().min(1).regex(/^node_[a-zA-Z0-9_-]+$/);
 
-/** 中文说明：URL 作为输入契约存在，但本轮只约束格式，不处理抓取逻辑。 */
+/** 中文说明：URL 作为输入契约存在，抓取治理由 parser 层按环境配置处理。 */
 export const urlSchema = z.string().url();
 
 /** 中文说明：统一约束 session 生命周期状态。 */

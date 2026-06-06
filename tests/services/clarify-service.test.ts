@@ -3,6 +3,8 @@ import { rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { IntentProvider } from "../../src/providers/llm/intent-provider.js";
+import { parseUrlSignal } from "../../src/providers/parser/url-parser.js";
 import { createClarifyService } from "../../src/services/conversation/clarify-service.js";
 import { createSessionService } from "../../src/services/conversation/session-service.js";
 
@@ -75,6 +77,79 @@ describe("clarify service", () => {
         sourceType: "url_metadata"
       })
     ]);
+    sessionService.close();
+    clarifyService.close();
+  });
+
+  it("passes resolved URL metadata to the intent provider", async () => {
+    const sessionService = await createSessionService();
+    const intentProvider: IntentProvider = {
+      async extractIntent(input) {
+        expect(input.urlSignals).toEqual([
+          expect.objectContaining({
+            summaryText: "example.com product Developer Platform hero features pricing",
+            sourceType: "url_fetched_metadata",
+            fallbackReason: null
+          })
+        ]);
+
+        return {
+          intentModel: {
+            pageType: "landing_page",
+            audience: "developers",
+            sections: ["hero", "features", "pricing"],
+            primaryCta: "Start Free Trial",
+            styleTone: "professional",
+            sourceUrls: input.urlSignals.map((signal) => signal.normalizedUrl),
+            urlSignals: input.urlSignals.map((signal) => ({
+              normalizedUrl: signal.normalizedUrl,
+              hostname: signal.hostname,
+              path: signal.path,
+              sourceType: signal.sourceType,
+              fallbackReason: signal.fallbackReason
+            })),
+            provider: {
+              name: "test-intent-provider",
+              mode: "rule_based",
+              fallbackReason: null
+            }
+          },
+          missingFields: [],
+          questions: []
+        };
+      }
+    };
+    const clarifyService = await createClarifyService(
+      undefined,
+      intentProvider,
+      async (input) => ({
+        ...parseUrlSignal(input),
+        summaryText: "example.com product Developer Platform hero features pricing",
+        sourceType: "url_fetched_metadata",
+        fallbackReason: null
+      })
+    );
+    const session = await sessionService.createSession({
+      projectName: "Acme",
+      goal: "Landing page"
+    });
+
+    await sessionService.appendInput({
+      sessionId: session.sessionId,
+      inputs: [
+        {
+          type: "url",
+          url: "https://example.com/product"
+        }
+      ]
+    });
+
+    const result = await clarifyService.clarify({ sessionId: session.sessionId });
+
+    expect(result.isReady).toBe(true);
+    expect(result.interimIntentModel.provider).toMatchObject({
+      name: "test-intent-provider"
+    });
     sessionService.close();
     clarifyService.close();
   });

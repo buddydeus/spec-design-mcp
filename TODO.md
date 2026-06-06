@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 6 已完成，待规划下一阶段
+- 最近检查：阶段 7 已完成，待规划下一阶段
 - 最近验证：
-  - `npm test`：32 个测试文件、56 个测试通过
+  - `npm test`：32 个测试文件、64 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -27,6 +27,7 @@
 - 可配置 OpenAI-compatible LLM intent provider
 - rule-based clarify
 - URL metadata 降级诊断
+- 可选受限 URL HTML metadata 抓取
 - 生成受限 `DesignDOMAST`
 - 共享 `CompiledDocument` 编译中间结构
 - 生成本地 preview
@@ -42,7 +43,7 @@
 
 - 当前只提供本地 stdio MCP Server，尚未提供 HTTP transport。
 - 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 需要显式环境变量启用。
-- URL 只从 metadata 派生弱信号，不抓取远端内容。
+- URL 默认只从 metadata 派生弱信号；远端 HTML metadata 抓取需要显式环境变量启用。
 - 设计产物以结构可用为主，不追求高保真视觉。
 - preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
 
@@ -177,6 +178,25 @@
 - LLM 失败不会破坏 clarify 主链路。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 7：增强 URL 抓取治理
+
+状态：已完成
+
+目标：
+
+- 已新增可配置 URL signal resolver，默认保持不联网。
+- 已通过 `SPEC_DESIGN_MCP_URL_FETCH=metadata` 启用受限 HTML metadata 抓取。
+- 已支持超时、最大读取字节数、HTML content-type 检查。
+- 已拒绝 localhost、loopback 和常见 private IP 目标。
+- 已把 URL resolver 接入 clarify 主链路，并保留所有 fallback。
+
+验收：
+
+- 默认无配置时仍只从 hostname/path 派生弱信号。
+- 开启 URL 抓取后可提取 `<title>`、`description`、`og:description` 和首个 `<h1>`。
+- 不安全目标、非 HTML 响应和抓取失败都不会破坏 clarify 主链路。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+
 ## 当前下一步
 
-阶段 6 已完成。下一轮建议从 URL 抓取治理、截图/视觉 diff 或 HTTP transport 中选择一个新阶段。
+阶段 7 已完成。下一轮建议从截图/视觉 diff、HTTP transport 或外部 URL parser 中选择一个新阶段。
