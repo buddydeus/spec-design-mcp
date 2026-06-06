@@ -10,19 +10,23 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 10 已完成，待规划下一阶段
+- 最近检查：阶段 11 已完成，MVP 前必做 2-5 已收口
 - 最近验证：
-  - `npm test`：34 个测试文件、72 个测试通过
+  - `npm test`：34 个测试文件、75 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
-  - HTTP smoke：SDK Streamable HTTP client 可连接 `dist/src/http-server.js` 并列出 7 个 MCP tools
+  - HTTP smoke：SDK Streamable HTTP client 可携带 Bearer token 连接 `dist/src/http-server.js` 并列出 7 个 MCP tools
+  - MVP HTTP client walkthrough：`node examples/mvp-http-client.mjs` 可跑通 7 个 MCP tools 并导出交付包
 
 当前已实现能力：
 
 - stdio MCP Server 入口
 - stateless Streamable HTTP MCP Server 入口
+- HTTP Bearer auth、CORS allowlist 与基础限流
 - 官方 MCP SDK tool 注册
+- MVP 配置样例：`.env.example`
+- MVP HTTP client walkthrough：`examples/mvp-http-client.mjs`、`docs/mvp-walkthrough.md`
 - 创建 session
 - 追加 `text` / `url` 输入
 - LLM-compatible intent provider 接口
@@ -46,10 +50,12 @@
 当前主要边界：
 
 - 当前提供本地 stdio MCP Server 和 stateless Streamable HTTP MCP Server。
+- HTTP 入口仍默认监听 localhost；对外暴露前应配置 auth token、allowed origins 和 rate limit。
 - 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 需要显式环境变量启用。
 - URL 默认只从 metadata 派生弱信号；远端 HTML metadata 抓取和外部 parser 需要显式环境变量启用。
 - 设计产物以结构可用为主，不追求高保真视觉。
 - preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
+- HTTP transport 仍是 stateless；业务 session 由现有持久化层管理，transport stateful session 仍不是 MVP 必需项。
 
 已知非阻塞提醒：
 
@@ -258,6 +264,26 @@
 - 外部 parser 失败不会破坏 clarify 主链路。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 11：MVP readiness：配置、walkthrough 与 HTTP 暴露策略
+
+状态：已完成
+
+目标：
+
+- 已新增 `.env.example`，集中记录 runtime、LLM provider、URL fetch/parser、HTTP transport、防护和 MVP client 配置。
+- 已新增 `docs/mvp-walkthrough.md`，说明本地 MVP、真实 LLM MVP、HTTP 暴露防护和 client 联调流程。
+- 已新增 `examples/mvp-http-client.mjs`，通过官方 SDK Streamable HTTP client 顺序调用 7 个 MCP tools。
+- 已明确 MVP 默认策略：本地/internal MVP 默认 rule-based；真实 MVP demo 建议显式配置 OpenAI-compatible LLM provider。
+- 已新增 HTTP Bearer auth、CORS allowlist 与 remote-address 基础限流，支持通过环境变量配置。
+
+验收：
+
+- `.env.example` 覆盖当前所有主要运行配置。
+- HTTP endpoint 在配置 token 后拒绝未授权请求，并允许携带 Bearer token 的 SDK client 连接。
+- CORS 只对配置的 browser origin 返回允许头；限流超过阈值返回 `429`。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+- stdio smoke、HTTP auth smoke、MVP HTTP client walkthrough 通过。
+
 ## 当前下一步
 
-阶段 10 已完成。下一轮建议从真实浏览器 screenshot 导出、HTTP 认证/限流/stateful session 管理，或外部 URL parser 响应契约收敛中选择一个新阶段。
+阶段 11 已完成。以可以进行 MVP 为标准，当前剩余项已降为非阻塞增强：真实浏览器 screenshot 导出、stateful HTTP transport session 管理、外部 URL parser 响应契约进一步收敛，以及把当前分支推送/发版。

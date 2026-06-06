@@ -16,9 +16,11 @@
 - export 最小静态交付包
 - stdio MCP Server 入口
 - stateless Streamable HTTP MCP Server 入口
+- HTTP Bearer auth、CORS allowlist 与基础限流
 - 官方 MCP SDK tool 注册
 - preview/export 共享基础编译核心
 - 结构化视觉快照与 revise visual diff
+- MVP 配置样例与 HTTP client walkthrough
 - LLM-compatible intent provider 接口与 rule-based fallback
 - 可配置 OpenAI-compatible LLM intent provider
 - URL metadata 降级诊断
@@ -35,6 +37,15 @@
 - 默认启用真实 LLM provider
 - 默认抓取远端 URL 内容
 - 默认调用外部 URL parser
+- 默认对公网暴露 HTTP endpoint
+
+## MVP 默认策略
+
+本地和内部 MVP 默认使用 `rule_based` intent provider，优点是确定性强、无外部依赖、适合作为联调和回归基线。需要更接近真实用户输入时，建议显式配置 `SPEC_DESIGN_MCP_INTENT_PROVIDER=openai_compatible` 与对应 LLM endpoint。
+
+URL metadata 抓取和外部 URL parser 也默认关闭。MVP 阶段只有在目标 endpoint、超时、字节上限和失败 fallback 都明确后再开启。
+
+配置样例见 `.env.example`；完整 HTTP 客户端联调流程见 `docs/mvp-walkthrough.md`。
 
 ## Intent Provider
 
@@ -171,12 +182,24 @@ npm run start:http
 SPEC_DESIGN_MCP_HTTP_HOST=127.0.0.1
 SPEC_DESIGN_MCP_HTTP_PORT=3010
 SPEC_DESIGN_MCP_HTTP_PATH=/mcp
+SPEC_DESIGN_MCP_HTTP_AUTH_TOKEN=
+SPEC_DESIGN_MCP_HTTP_ALLOWED_ORIGINS=
+SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_WINDOW_MS=60000
+SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_MAX_REQUESTS=120
 ```
+
+`SPEC_DESIGN_MCP_HTTP_AUTH_TOKEN` 设置后，客户端必须发送 `Authorization: Bearer <token>`。`SPEC_DESIGN_MCP_HTTP_ALLOWED_ORIGINS` 使用逗号分隔；为空时不返回 CORS 头。限流按 remote address 计数，把窗口或上限设为 `0` 可关闭。
 
 Streamable HTTP 客户端可连接：
 
 ```text
 http://127.0.0.1:3010/mcp
+```
+
+MVP HTTP walkthrough 可直接调用全部 7 个 MCP tools：
+
+```bash
+node examples/mvp-http-client.mjs
 ```
 
 ## 对外工具
@@ -278,6 +301,6 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 ## 后续优化
 
 - 真实浏览器 screenshot 导出
-- HTTP 认证、限流或 stateful session 管理
+- stateful HTTP session 管理
 
 发布或交付前检查见 `docs/release-checklist.md`。

@@ -9,13 +9,21 @@ import { createSpecDesignMcpServer } from "./mcp/server.js";
 export const httpServerEnvVars = {
   host: "SPEC_DESIGN_MCP_HTTP_HOST",
   port: "SPEC_DESIGN_MCP_HTTP_PORT",
-  path: "SPEC_DESIGN_MCP_HTTP_PATH"
+  path: "SPEC_DESIGN_MCP_HTTP_PATH",
+  authToken: "SPEC_DESIGN_MCP_HTTP_AUTH_TOKEN",
+  allowedOrigins: "SPEC_DESIGN_MCP_HTTP_ALLOWED_ORIGINS",
+  rateLimitWindowMs: "SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_WINDOW_MS",
+  rateLimitMaxRequests: "SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_MAX_REQUESTS"
 } as const;
 
 export interface SpecDesignHttpServerOptions {
   host?: string;
   port?: number;
   mcpPath?: string;
+  authToken?: string;
+  allowedOrigins?: string[];
+  rateLimitWindowMs?: number;
+  rateLimitMaxRequests?: number;
 }
 
 export interface StartedSpecDesignHttpServer {
@@ -30,8 +38,16 @@ export interface StartedSpecDesignHttpServer {
 const defaultHttpServerOptions = {
   host: "127.0.0.1",
   port: 3010,
-  mcpPath: "/mcp"
+  mcpPath: "/mcp",
+  allowedOrigins: [] as string[],
+  rateLimitWindowMs: 60_000,
+  rateLimitMaxRequests: 120
 } as const;
+
+interface RateLimitEntry {
+  windowStartedAt: number;
+  requestCount: number;
+}
 
 function parsePort(value: string | undefined, fallback: number): number {
   if (!value) {
@@ -41,6 +57,16 @@ function parsePort(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value, 10);
 
   return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65_535 ? parsed : fallback;
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number): number {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 function normalizeMcpPath(path: string | undefined): string {
@@ -57,8 +83,29 @@ export function readHttpServerOptionsFromEnv(
   return {
     host: env[httpServerEnvVars.host] ?? defaultHttpServerOptions.host,
     port: parsePort(env[httpServerEnvVars.port], defaultHttpServerOptions.port),
-    mcpPath: normalizeMcpPath(env[httpServerEnvVars.path])
+    mcpPath: normalizeMcpPath(env[httpServerEnvVars.path]),
+    authToken: env[httpServerEnvVars.authToken] ?? "",
+    allowedOrigins: parseAllowedOrigins(env[httpServerEnvVars.allowedOrigins]),
+    rateLimitWindowMs: parsePositiveInteger(
+      env[httpServerEnvVars.rateLimitWindowMs],
+      defaultHttpServerOptions.rateLimitWindowMs
+    ),
+    rateLimitMaxRequests: parsePositiveInteger(
+      env[httpServerEnvVars.rateLimitMaxRequests],
+      defaultHttpServerOptions.rateLimitMaxRequests
+    )
   };
+}
+
+function parseAllowedOrigins(value: string | undefined): string[] {
+  if (!value) {
+    return defaultHttpServerOptions.allowedOrigins;
+  }
+
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 }
 
 function writeJson(res: ServerResponse, statusCode: number, payload: unknown): void {
@@ -81,6 +128,78 @@ function writeJsonRpcError(res: ServerResponse, statusCode: number, message: str
     },
     id: null
   });
+}
+
+function getRequestOrigin(req: IncomingMessage): string | null {
+  const origin = req.headers.origin;
+
+  return typeof origin === "string" && origin.length > 0 ? origin : null;
+}
+
+function isOriginAllowed(origin: string | null, allowedOrigins: string[]): boolean {
+  if (!origin || allowedOrigins.length === 0) {
+    return true;
+  }
+
+  return allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+}
+
+function applyCorsHeaders(
+  req: IncomingMessage,
+  res: ServerResponse,
+  allowedOrigins: string[]
+): void {
+  const origin = getRequestOrigin(req);
+
+  if (!origin || allowedOrigins.length === 0 || !isOriginAllowed(origin, allowedOrigins)) {
+    return;
+  }
+
+  res.setHeader("access-control-allow-origin", allowedOrigins.includes("*") ? "*" : origin);
+  res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+  res.setHeader(
+    "access-control-allow-headers",
+    "authorization, content-type, last-event-id, mcp-protocol-version, mcp-session-id"
+  );
+  res.setHeader("vary", "origin");
+}
+
+function isAuthorized(req: IncomingMessage, authToken: string): boolean {
+  if (!authToken) {
+    return true;
+  }
+
+  return req.headers.authorization === `Bearer ${authToken}`;
+}
+
+function getRateLimitKey(req: IncomingMessage): string {
+  return req.socket.remoteAddress ?? "unknown";
+}
+
+function isRateLimited(
+  req: IncomingMessage,
+  rateLimits: Map<string, RateLimitEntry>,
+  options: Required<Pick<SpecDesignHttpServerOptions, "rateLimitMaxRequests" | "rateLimitWindowMs">>
+): boolean {
+  if (options.rateLimitMaxRequests <= 0 || options.rateLimitWindowMs <= 0) {
+    return false;
+  }
+
+  const now = Date.now();
+  const key = getRateLimitKey(req);
+  const existing = rateLimits.get(key);
+
+  if (!existing || now - existing.windowStartedAt >= options.rateLimitWindowMs) {
+    rateLimits.set(key, {
+      windowStartedAt: now,
+      requestCount: 1
+    });
+    return false;
+  }
+
+  existing.requestCount += 1;
+
+  return existing.requestCount > options.rateLimitMaxRequests;
 }
 
 function getRequestPath(req: IncomingMessage): string {
@@ -116,9 +235,17 @@ async function handleMcpRequest(req: IncomingMessage, res: ServerResponse): Prom
 /** 中文说明：创建 stateless Streamable HTTP MCP server，默认只暴露 /mcp 与 /healthz。 */
 export function createSpecDesignHttpServer(options: SpecDesignHttpServerOptions = {}): Server {
   const mcpPath = normalizeMcpPath(options.mcpPath ?? defaultHttpServerOptions.mcpPath);
+  const authToken = options.authToken ?? "";
+  const allowedOrigins = options.allowedOrigins ?? defaultHttpServerOptions.allowedOrigins;
+  const rateLimitWindowMs =
+    options.rateLimitWindowMs ?? defaultHttpServerOptions.rateLimitWindowMs;
+  const rateLimitMaxRequests =
+    options.rateLimitMaxRequests ?? defaultHttpServerOptions.rateLimitMaxRequests;
+  const rateLimits = new Map<string, RateLimitEntry>();
 
   return createServer((req, res) => {
     const requestPath = getRequestPath(req);
+    applyCorsHeaders(req, res, allowedOrigins);
 
     if (requestPath === "/healthz") {
       writeJson(res, 200, {
@@ -136,6 +263,35 @@ export function createSpecDesignHttpServer(options: SpecDesignHttpServerOptions 
       return;
     }
 
+    if (!isOriginAllowed(getRequestOrigin(req), allowedOrigins)) {
+      writeJson(res, 403, {
+        error: "Origin not allowed"
+      });
+      return;
+    }
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (!isAuthorized(req, authToken)) {
+      res.setHeader("www-authenticate", "Bearer");
+      writeJsonRpcError(res, 401, "Unauthorized");
+      return;
+    }
+
+    if (
+      isRateLimited(req, rateLimits, {
+        rateLimitMaxRequests,
+        rateLimitWindowMs
+      })
+    ) {
+      writeJsonRpcError(res, 429, "Too many requests");
+      return;
+    }
+
     handleMcpRequest(req, res).catch((error: unknown) => {
       console.error("Spec Design MCP HTTP handler failed:", error);
       writeJsonRpcError(res, 500, "Internal server error");
@@ -146,10 +302,11 @@ export function createSpecDesignHttpServer(options: SpecDesignHttpServerOptions 
 export async function startSpecDesignHttpServer(
   options: SpecDesignHttpServerOptions = {}
 ): Promise<StartedSpecDesignHttpServer> {
+  const envOptions = readHttpServerOptionsFromEnv();
   const resolvedOptions = {
-    ...readHttpServerOptionsFromEnv(),
+    ...envOptions,
     ...options,
-    mcpPath: normalizeMcpPath(options.mcpPath ?? readHttpServerOptionsFromEnv().mcpPath)
+    mcpPath: normalizeMcpPath(options.mcpPath ?? envOptions.mcpPath)
   };
   const server = createSpecDesignHttpServer(resolvedOptions);
 

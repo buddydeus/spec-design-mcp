@@ -45,12 +45,20 @@ describe("Spec Design HTTP MCP server", () => {
       readHttpServerOptionsFromEnv({
         SPEC_DESIGN_MCP_HTTP_HOST: "0.0.0.0",
         SPEC_DESIGN_MCP_HTTP_PORT: "4321",
-        SPEC_DESIGN_MCP_HTTP_PATH: "api/mcp"
+        SPEC_DESIGN_MCP_HTTP_PATH: "api/mcp",
+        SPEC_DESIGN_MCP_HTTP_AUTH_TOKEN: "mvp-token",
+        SPEC_DESIGN_MCP_HTTP_ALLOWED_ORIGINS: "https://app.example.test, https://admin.example.test",
+        SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_WINDOW_MS: "90000",
+        SPEC_DESIGN_MCP_HTTP_RATE_LIMIT_MAX_REQUESTS: "30"
       })
     ).toEqual({
       host: "0.0.0.0",
       port: 4321,
-      mcpPath: "/api/mcp"
+      mcpPath: "/api/mcp",
+      authToken: "mvp-token",
+      allowedOrigins: ["https://app.example.test", "https://admin.example.test"],
+      rateLimitWindowMs: 90_000,
+      rateLimitMaxRequests: 30
     });
   });
 
@@ -76,6 +84,116 @@ describe("Spec Design HTTP MCP server", () => {
       expect(tools.tools.map((tool) => tool.name)).toEqual([...specDesignToolNames]);
     } finally {
       await client.close();
+      await closeServer(server);
+    }
+  });
+
+  it("requires bearer auth when an HTTP auth token is configured", async () => {
+    const server = createSpecDesignHttpServer({
+      authToken: "mvp-token"
+    });
+    const port = await listenOnRandomPort(server);
+    const mcpUrl = `http://127.0.0.1:${port}/mcp`;
+
+    try {
+      const unauthorizedResponse = await fetch(mcpUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: "{}"
+      });
+
+      expect(unauthorizedResponse.status).toBe(401);
+      expect(unauthorizedResponse.headers.get("www-authenticate")).toBe("Bearer");
+
+      const client = new Client({
+        name: "spec-design-mcp-http-auth-test",
+        version: "0.0.0"
+      });
+      const transport = new StreamableHTTPClientTransport(new URL(mcpUrl), {
+        requestInit: {
+          headers: {
+            Authorization: "Bearer mvp-token"
+          }
+        }
+      });
+
+      try {
+        await client.connect(transport);
+        const tools = await client.listTools();
+
+        expect(tools.tools.map((tool) => tool.name)).toEqual([...specDesignToolNames]);
+      } finally {
+        await client.close();
+      }
+    } finally {
+      await closeServer(server);
+    }
+  });
+
+  it("returns CORS headers only for configured browser origins", async () => {
+    const server = createSpecDesignHttpServer({
+      allowedOrigins: ["https://app.example.test"]
+    });
+    const port = await listenOnRandomPort(server);
+    const mcpUrl = `http://127.0.0.1:${port}/mcp`;
+
+    try {
+      const allowedPreflight = await fetch(mcpUrl, {
+        method: "OPTIONS",
+        headers: {
+          origin: "https://app.example.test"
+        }
+      });
+
+      expect(allowedPreflight.status).toBe(204);
+      expect(allowedPreflight.headers.get("access-control-allow-origin")).toBe(
+        "https://app.example.test"
+      );
+
+      const blockedResponse = await fetch(mcpUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://blocked.example.test"
+        },
+        body: "{}"
+      });
+
+      expect(blockedResponse.status).toBe(403);
+    } finally {
+      await closeServer(server);
+    }
+  });
+
+  it("rate limits MCP requests by remote address", async () => {
+    const server = createSpecDesignHttpServer({
+      rateLimitWindowMs: 60_000,
+      rateLimitMaxRequests: 1
+    });
+    const port = await listenOnRandomPort(server);
+    const mcpUrl = `http://127.0.0.1:${port}/mcp`;
+
+    try {
+      const firstResponse = await fetch(mcpUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: "{}"
+      });
+      const secondResponse = await fetch(mcpUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: "{}"
+      });
+
+      expect(firstResponse.status).not.toBe(429);
+      expect(secondResponse.status).toBe(429);
+    } finally {
       await closeServer(server);
     }
   });
