@@ -12,7 +12,7 @@ afterEach(async () => {
 });
 
 describe("preview service", () => {
-  it("writes preview.html and section-summary.json for a generated design", async () => {
+  it("writes preview.html, section-summary.json, and visual-snapshot.json for a generated design", async () => {
     const previewService = await createPreviewService();
 
     const result = await previewService.generatePreview({
@@ -81,14 +81,26 @@ describe("preview service", () => {
     await access(
       new URL("../../.runtime/artifacts/session_demo/v1/section-summary.json", import.meta.url)
     );
+    await access(
+      new URL("../../.runtime/artifacts/session_demo/v1/visual-snapshot.json", import.meta.url)
+    );
 
     const previewHtml = await readFile(
       new URL("../../.runtime/artifacts/session_demo/v1/preview.html", import.meta.url),
       "utf8"
     );
+    const visualSnapshot = JSON.parse(
+      await readFile(
+        new URL("../../.runtime/artifacts/session_demo/v1/visual-snapshot.json", import.meta.url),
+        "utf8"
+      )
+    ) as { nodeCount: number; fingerprint: string };
 
     expect(result.previewArtifacts).toContain("preview.html");
+    expect(result.previewArtifacts).toContain("visual-snapshot.json");
     expect(previewHtml).toContain("data-node-id=\"node_hero\"");
+    expect(visualSnapshot.nodeCount).toBe(3);
+    expect(visualSnapshot.fingerprint).toHaveLength(16);
     previewService.close();
   });
 });

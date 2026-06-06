@@ -14,8 +14,8 @@ describe("artifact schemas", () => {
       generatedAt: "2026-04-22T00:00:00.000Z",
       artifacts: [
         {
-          artifactType: "compiled.html",
-          filePath: ".runtime/exports/session_demo/v1/compiled.html"
+          artifactType: "visual-snapshot.json",
+          filePath: ".runtime/artifacts/session_demo/v1/visual-snapshot.json"
         }
       ]
     });

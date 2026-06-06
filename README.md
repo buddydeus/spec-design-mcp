@@ -17,6 +17,7 @@
 - stdio MCP Server 入口
 - 官方 MCP SDK tool 注册
 - preview/export 共享基础编译核心
+- 结构化视觉快照与 revise visual diff
 - LLM-compatible intent provider 接口与 rule-based fallback
 - 可配置 OpenAI-compatible LLM intent provider
 - URL metadata 降级诊断
@@ -152,11 +153,11 @@ npm start
 `DesignDOMAST` 会先编译为共享的 `CompiledDocument` 中间结构，再派生 preview/export 所需产物。
 
 - `src/services/compiler/`
-  - 统一 AST 编译、HTML 片段渲染、基础 CSS 规则和基础 style 映射
+  - 统一 AST 编译、HTML 片段渲染、基础 CSS 规则、基础 style 映射和视觉快照
 - `src/services/preview/`
-  - 负责 preview 页面壳层和 `preview.html` / `section-summary.json` 落盘
+  - 负责 preview 页面壳层、`preview.html`、`section-summary.json`、`visual-snapshot.json` 和 revise 时的 `visual-diff.json` 落盘
 - `src/services/export/`
-  - 负责 export 页面壳层、CSS、manifest 和交付包落盘
+  - 负责 export 页面壳层、CSS、`visual-snapshot.json`、manifest 和交付包落盘
 
 这样可以保证 preview/export 的节点层级、`data-node-id` 和基础标签映射来自同一套结构规则。
 
@@ -188,6 +189,7 @@ npm start
   - SQLite 元数据
 - `.runtime/artifacts/<sessionId>/<version>/`
   - preview 与 export 产物
+  - revise 版本额外包含 `visual-diff.json`
 
 其中 export 目录最少包含：
 
@@ -195,6 +197,7 @@ npm start
 - `design-ast.json`
 - `compiled.html`
 - `compiled.css`
+- `visual-snapshot.json`
 - `annotation-manifest.json`
 - `binding.schema.json`
 
@@ -229,8 +232,8 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 
 ## 后续优化
 
-- 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式
-- 外部 URL parser 接入
 - 增加 HTTP transport
+- 外部 URL parser 接入
+- 真实浏览器 screenshot 导出
 
 发布或交付前检查见 `docs/release-checklist.md`。

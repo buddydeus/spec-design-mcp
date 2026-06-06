@@ -61,14 +61,21 @@ describe("export service", () => {
       "design-ast.json",
       "compiled.html",
       "compiled.css",
+      "visual-snapshot.json",
       "annotation-manifest.json",
       "binding.schema.json"
     ]);
-    expect(manifest.artifacts).toHaveLength(6);
+    expect(manifest.artifacts).toHaveLength(7);
     expect(storedSession?.status).toBe("exported");
     await access(
       new URL(
         `../../.runtime/artifacts/${session.sessionId}/v1/export/compiled.html`,
+        import.meta.url
+      )
+    );
+    await access(
+      new URL(
+        `../../.runtime/artifacts/${session.sessionId}/v1/export/visual-snapshot.json`,
         import.meta.url
       )
     );

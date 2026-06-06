@@ -49,6 +49,7 @@ describe("export tools", () => {
 
     expect(result.deliveryPackageRef).toContain("artifact-manifest.json");
     expect(result.artifacts).toContain("compiled.html");
+    expect(result.artifacts).toContain("visual-snapshot.json");
     expect(result.artifacts).toContain("binding.schema.json");
     await access(new URL(`../../${result.deliveryPackageRef}`, import.meta.url));
   });

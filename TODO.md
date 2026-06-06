@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 7 已完成，待规划下一阶段
+- 最近检查：阶段 8 已完成，待规划下一阶段
 - 最近验证：
-  - `npm test`：32 个测试文件、64 个测试通过
+  - `npm test`：33 个测试文件、66 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -30,6 +30,7 @@
 - 可选受限 URL HTML metadata 抓取
 - 生成受限 `DesignDOMAST`
 - 共享 `CompiledDocument` 编译中间结构
+- 结构化视觉快照与 revise visual diff
 - 生成本地 preview
 - 基于自然语言 revise 并生成新版本
 - confirm 指定设计版本
@@ -197,6 +198,25 @@
 - 不安全目标、非 HTML 响应和抓取失败都不会破坏 clarify 主链路。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 8：扩展视觉快照与 visual diff
+
+状态：已完成
+
+目标：
+
+- 已从共享 `CompiledDocument` 派生结构化 `visual-snapshot.json`。
+- 已在 preview 产物中输出 `visual-snapshot.json`。
+- 已在 revise 版本中输出 `visual-diff.json`，比较上一版本与新版本的节点、层级、文案和样式指纹。
+- 已在 export 交付包 manifest 中纳入 `visual-snapshot.json`。
+- 已补充视觉快照、preview、revise、export 和 smoke 回归测试。
+
+验收：
+
+- preview/export 的视觉快照来自同一编译管线。
+- revise 后可以生成结构化 visual diff，供下游做回归判断。
+- export manifest 可发现并消费 `visual-snapshot.json`。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+
 ## 当前下一步
 
-阶段 7 已完成。下一轮建议从截图/视觉 diff、HTTP transport 或外部 URL parser 中选择一个新阶段。
+阶段 8 已完成。下一轮建议从 HTTP transport、外部 URL parser 或真实浏览器 screenshot 导出中选择一个新阶段。

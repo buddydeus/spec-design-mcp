@@ -1,5 +1,5 @@
 /** 中文说明：验证 revise service 的版本递增与冲突规则。 */
-import { access, rm } from "node:fs/promises";
+import { access, readFile, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -59,7 +59,22 @@ describe("revise service", () => {
     expect(result.nodeDiffs).toHaveLength(5);
     expect(result.previewRef).toContain("/v2/preview.html");
     expect(result.previewArtifacts).toContain("section-summary.json");
+    expect(result.previewArtifacts).toContain("visual-snapshot.json");
+    expect(result.previewArtifacts).toContain("visual-diff.json");
     await access(new URL(`../../${result.previewRef}`, import.meta.url));
+    await access(
+      new URL(`../../.runtime/artifacts/${session.sessionId}/v2/visual-diff.json`, import.meta.url)
+    );
+
+    const visualDiff = JSON.parse(
+      await readFile(
+        new URL(`../../.runtime/artifacts/${session.sessionId}/v2/visual-diff.json`, import.meta.url),
+        "utf8"
+      )
+    ) as { hasVisualChanges: boolean; nodeChanges: unknown[] };
+
+    expect(visualDiff.hasVisualChanges).toBe(true);
+    expect(visualDiff.nodeChanges.length).toBeGreaterThan(0);
 
     sessionService.close();
     generateService.close();

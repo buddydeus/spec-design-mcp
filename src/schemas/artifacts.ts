@@ -12,6 +12,8 @@ const artifactTypeSchema = z.enum([
   "preview.html",
   "preview.png",
   "section-summary.json",
+  "visual-snapshot.json",
+  "visual-diff.json",
   "revision-diff.json",
   "node-diffs.json",
   "compiled.html",

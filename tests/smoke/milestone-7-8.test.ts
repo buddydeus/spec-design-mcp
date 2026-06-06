@@ -70,6 +70,7 @@ describe("milestone 7-8 smoke", () => {
       "design-ast.json",
       "compiled.html",
       "compiled.css",
+      "visual-snapshot.json",
       "annotation-manifest.json",
       "binding.schema.json"
     ]);
@@ -132,6 +133,7 @@ describe("milestone 7-8 smoke", () => {
 
     expect(exported.artifacts).toContain("artifact-manifest.json");
     expect(exported.artifacts).toContain("compiled.css");
+    expect(exported.artifacts).toContain("visual-snapshot.json");
     await access(new URL(`../../${exported.deliveryPackageRef}`, import.meta.url));
     await access(
       new URL(
@@ -191,6 +193,7 @@ describe("milestone 7-8 smoke", () => {
     });
 
     expect(exported.artifacts).toContain("compiled.html");
+    expect(exported.artifacts).toContain("visual-snapshot.json");
     await access(new URL(`../../${exported.deliveryPackageRef}`, import.meta.url));
   });
 });

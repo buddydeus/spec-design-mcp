@@ -1,6 +1,7 @@
 import { designAstSchema } from "../../schemas/ast.js";
 import { getArtifactRef } from "../../lib/runtime/paths.js";
 import { writeArtifactFile } from "../../storage/file-artifact-store.js";
+import { createVisualDiff, createVisualSnapshot } from "../compiler/visual-snapshot.js";
 import { renderPreviewHtml } from "./html-renderer.js";
 
 /** 中文说明：生成 preview 所需的最小输入结构。 */
@@ -8,6 +9,7 @@ export interface GeneratePreviewInput {
   sessionId: string;
   designVersion: string;
   designAst: ReturnType<typeof designAstSchema.parse>;
+  baseDesignAst?: unknown;
   sectionSummary: string[];
 }
 
@@ -33,6 +35,8 @@ export async function createPreviewService(): Promise<PreviewService> {
       const validatedAst = designAstSchema.parse(input.designAst);
       const basePath = `${input.sessionId}/${input.designVersion}`;
       const previewHtml = renderPreviewHtml(validatedAst);
+      const visualSnapshot = createVisualSnapshot(validatedAst);
+      const previewArtifacts = ["preview.html", "section-summary.json", "visual-snapshot.json"];
 
       await writeArtifactFile({
         relativePath: `${basePath}/preview.html`,
@@ -42,10 +46,24 @@ export async function createPreviewService(): Promise<PreviewService> {
         relativePath: `${basePath}/section-summary.json`,
         contents: JSON.stringify(input.sectionSummary, null, 2)
       });
+      await writeArtifactFile({
+        relativePath: `${basePath}/visual-snapshot.json`,
+        contents: JSON.stringify(visualSnapshot, null, 2)
+      });
+
+      if (input.baseDesignAst) {
+        const baseSnapshot = createVisualSnapshot(input.baseDesignAst);
+        const visualDiff = createVisualDiff(baseSnapshot, visualSnapshot);
+        previewArtifacts.push("visual-diff.json");
+        await writeArtifactFile({
+          relativePath: `${basePath}/visual-diff.json`,
+          contents: JSON.stringify(visualDiff, null, 2)
+        });
+      }
 
       return {
         previewRef: getArtifactRef(`${basePath}/preview.html`),
-        previewArtifacts: ["preview.html", "section-summary.json"]
+        previewArtifacts
       };
     },
     close() {

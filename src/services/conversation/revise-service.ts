@@ -65,6 +65,7 @@ export async function createReviseService(
         sessionId: validatedParams.sessionId,
         designVersion: nextVersion,
         designAst: revisedAstResult.designAst,
+        baseDesignAst: baseVersion.designAst,
         sectionSummary
       });
 

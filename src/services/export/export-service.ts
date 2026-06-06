@@ -13,6 +13,7 @@ import {
 } from "../../storage/session-repository.js";
 import { getArtifactRef } from "../../lib/runtime/paths.js";
 import { getNowIsoString } from "../../lib/runtime/ids.js";
+import { createVisualSnapshot } from "../compiler/visual-snapshot.js";
 import { buildAnnotationManifest } from "./annotation-builder.js";
 import { buildBindingSchema } from "./binding-builder.js";
 import { emitCompiledCss } from "./css-emitter.js";
@@ -67,6 +68,7 @@ export async function createExportService(
       const compiledCss = emitCompiledCss();
       const annotationManifest = buildAnnotationManifest(designVersion.designAst);
       const bindingSchema = buildBindingSchema(designVersion.designAst);
+      const visualSnapshot = createVisualSnapshot(designVersion.designAst);
       const designAstJson = JSON.stringify(designVersion.designAst, null, 2);
 
       const artifactItems = [
@@ -85,6 +87,10 @@ export async function createExportService(
         {
           artifactType: "compiled.css" as const,
           filePath: getArtifactRef(`${basePath}/compiled.css`)
+        },
+        {
+          artifactType: "visual-snapshot.json" as const,
+          filePath: getArtifactRef(`${basePath}/visual-snapshot.json`)
         },
         {
           artifactType: "annotation-manifest.json" as const,
@@ -113,6 +119,10 @@ export async function createExportService(
       await writeArtifactFile({
         relativePath: `${basePath}/compiled.css`,
         contents: compiledCss
+      });
+      await writeArtifactFile({
+        relativePath: `${basePath}/visual-snapshot.json`,
+        contents: JSON.stringify(visualSnapshot, null, 2)
       });
       await writeArtifactFile({
         relativePath: `${basePath}/annotation-manifest.json`,
