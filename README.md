@@ -15,6 +15,7 @@
 - confirm 某个设计版本
 - export 最小静态交付包
 - stdio MCP Server 入口
+- stateless Streamable HTTP MCP Server 入口
 - 官方 MCP SDK tool 注册
 - preview/export 共享基础编译核心
 - 结构化视觉快照与 revise visual diff
@@ -87,6 +88,7 @@ npm test
 npm run typecheck
 npm run build
 npm start
+npm run start:http
 ```
 
 CI 使用 GitHub Actions 跑同一组核心验证：`npm ci`、`npm run typecheck`、`npm test`、`npm run build`。
@@ -105,7 +107,9 @@ npm test -- tests/mcp/server.test.ts
 
 ## MCP Server
 
-项目使用官方 `@modelcontextprotocol/sdk` 暴露 stdio MCP Server。构建后可直接启动：
+项目使用官方 `@modelcontextprotocol/sdk` 暴露 stdio 与 stateless Streamable HTTP 两种 MCP transport。
+
+stdio 入口构建后可直接启动：
 
 ```bash
 npm run build
@@ -134,6 +138,34 @@ npm start
 
 若在其他目录使用，请把 `args[0]` 与 `cwd` 换成实际仓库路径。
 
+HTTP 入口构建后可直接启动：
+
+```bash
+npm run build
+npm run start:http
+```
+
+默认监听：
+
+- host：`127.0.0.1`
+- port：`3010`
+- MCP endpoint：`/mcp`
+- health endpoint：`/healthz`
+
+可通过环境变量调整：
+
+```bash
+SPEC_DESIGN_MCP_HTTP_HOST=127.0.0.1
+SPEC_DESIGN_MCP_HTTP_PORT=3010
+SPEC_DESIGN_MCP_HTTP_PATH=/mcp
+```
+
+Streamable HTTP 客户端可连接：
+
+```text
+http://127.0.0.1:3010/mcp
+```
+
 ## 对外工具
 
 当前 `v0` 暴露以下 MCP tools：
@@ -146,7 +178,7 @@ npm start
 - `design.design.confirm`
 - `design.export.package`
 
-对应本地 handler 与 schema 导出入口统一聚合在 `src/index.ts`。MCP 注册工厂位于 `src/mcp/server.ts`，stdio 启动入口位于 `src/server.ts`。
+对应本地 handler 与 schema 导出入口统一聚合在 `src/index.ts`。MCP 注册工厂位于 `src/mcp/server.ts`，stdio 启动入口位于 `src/server.ts`，HTTP 启动入口位于 `src/http-server.ts`。
 
 ## 编译管线
 
@@ -226,13 +258,12 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 - `tests/smoke/`
   - 里程碑级端到端 smoke
 - `tests/mcp/`
-  - MCP server 注册与结构化返回测试
+  - MCP server 注册、stdio/HTTP transport 入口与结构化返回测试
 
-当前 `Milestone 7-8` smoke 已覆盖 `3` 组固定样例，覆盖 developer、founder、marketer 三类输入组合，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册与结构化 tool result 包装。
+当前 `Milestone 7-8` smoke 已覆盖 `3` 组固定样例，覆盖 developer、founder、marketer 三类输入组合，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册、结构化 tool result 包装和 Streamable HTTP client 连接。
 
 ## 后续优化
 
-- 增加 HTTP transport
 - 外部 URL parser 接入
 - 真实浏览器 screenshot 导出
 

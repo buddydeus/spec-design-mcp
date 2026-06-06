@@ -10,16 +10,18 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 8 已完成，待规划下一阶段
+- 最近检查：阶段 9 已完成，待规划下一阶段
 - 最近验证：
-  - `npm test`：33 个测试文件、66 个测试通过
+  - `npm test`：34 个测试文件、68 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
+  - HTTP smoke：SDK Streamable HTTP client 可连接 `dist/src/http-server.js` 并列出 7 个 MCP tools
 
 当前已实现能力：
 
 - stdio MCP Server 入口
+- stateless Streamable HTTP MCP Server 入口
 - 官方 MCP SDK tool 注册
 - 创建 session
 - 追加 `text` / `url` 输入
@@ -42,7 +44,7 @@
 
 当前主要边界：
 
-- 当前只提供本地 stdio MCP Server，尚未提供 HTTP transport。
+- 当前提供本地 stdio MCP Server 和 stateless Streamable HTTP MCP Server。
 - 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 需要显式环境变量启用。
 - URL 默认只从 metadata 派生弱信号；远端 HTML metadata 抓取需要显式环境变量启用。
 - 设计产物以结构可用为主，不追求高保真视觉。
@@ -217,6 +219,25 @@
 - export manifest 可发现并消费 `visual-snapshot.json`。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 9：补齐 HTTP transport
+
+状态：已完成
+
+目标：
+
+- 已新增 `src/http-server.ts`，提供 stateless Streamable HTTP MCP endpoint。
+- 已新增 `npm run start:http` 和 `spec-design-mcp-http` bin 入口。
+- 已支持 `SPEC_DESIGN_MCP_HTTP_HOST`、`SPEC_DESIGN_MCP_HTTP_PORT`、`SPEC_DESIGN_MCP_HTTP_PATH` 配置。
+- 已提供 `/healthz` 健康检查。
+- 已用官方 SDK `StreamableHTTPClientTransport` 覆盖 HTTP client 连接和 7 个 tools 注册。
+
+验收：
+
+- 构建后可通过 HTTP endpoint 连接 MCP server。
+- stdio 入口保持不变。
+- HTTP 入口默认不维护 transport session 状态，业务 session 仍由现有持久化层管理。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+
 ## 当前下一步
 
-阶段 8 已完成。下一轮建议从 HTTP transport、外部 URL parser 或真实浏览器 screenshot 导出中选择一个新阶段。
+阶段 9 已完成。下一轮建议从外部 URL parser、真实浏览器 screenshot 导出，或 HTTP 认证/限流/stateful session 管理中选择一个新阶段。

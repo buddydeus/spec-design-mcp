@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "bin": {
-    "spec-design-mcp": "./dist/src/server.js"
+    "spec-design-mcp": "./dist/src/server.js",
+    "spec-design-mcp-http": "./dist/src/http-server.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
+    "start:http": "node dist/src/http-server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json"
