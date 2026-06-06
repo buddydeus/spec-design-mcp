@@ -18,6 +18,7 @@
 - 官方 MCP SDK tool 注册
 - preview/export 共享基础编译核心
 - LLM-compatible intent provider 接口与 rule-based fallback
+- 可配置 OpenAI-compatible LLM intent provider
 - URL metadata 降级诊断
 
 ## 当前 `v0` 不做
@@ -27,18 +28,31 @@
 - 可视化编辑器
 - 高保真设计还原
 - screenshot 导出
-- 真实 LLM provider 默认接入
+- 默认启用真实 LLM provider
 
 ## Intent Provider
 
-`clarify` 流程通过 `IntentProvider` 接口提取页面意图。当前默认实现是 deterministic rule-based provider，并在 `interimIntentModel.provider` 中返回 fallback 元信息。
+`clarify` 流程通过 `IntentProvider` 接口提取页面意图。默认实现是 deterministic rule-based provider；也可以通过环境变量启用 OpenAI-compatible chat completions provider，并在请求失败或配置不完整时自动 fallback。
 
 - `src/providers/llm/intent-provider.ts`
   - 定义未来可由真实 LLM 实现替换的接口
 - `src/providers/llm/rule-based-intent-provider.ts`
   - 当前默认 fallback，实现 audience、sections、CTA、style tone 的稳定提取
+- `src/providers/llm/openai-compatible-intent-provider.ts`
+  - 可选真实 LLM provider，读取 chat completion JSON 响应
 - `src/providers/parser/url-parser.ts`
   - 不抓取远端内容，只从 hostname/path 派生弱信号，并返回 `fallbackReason`
+
+启用真实 LLM intent provider：
+
+```bash
+SPEC_DESIGN_MCP_INTENT_PROVIDER=openai_compatible
+SPEC_DESIGN_MCP_LLM_ENDPOINT=https://api.example.com/v1/chat/completions
+SPEC_DESIGN_MCP_LLM_MODEL=your-model
+SPEC_DESIGN_MCP_LLM_API_KEY=your-api-key
+```
+
+`SPEC_DESIGN_MCP_LLM_API_KEY` 可选；如果你的 endpoint 不需要 Bearer token，可以不设置。
 
 ## 环境要求
 
@@ -199,13 +213,12 @@ SPEC_DESIGN_MCP_RUNTIME_DIR=/absolute/path/to/runtime
 - `tests/mcp/`
   - MCP server 注册与结构化返回测试
 
-当前 `Milestone 7-8` smoke 已覆盖 `2` 组固定样例，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册与结构化 tool result 包装。
-当前固定 smoke 样例已扩展到 `3` 组，覆盖 developer、founder、marketer 三类输入组合。
+当前 `Milestone 7-8` smoke 已覆盖 `3` 组固定样例，覆盖 developer、founder、marketer 三类输入组合，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册与结构化 tool result 包装。
 
 ## 后续优化
 
-- 接入真实 LLM provider
 - 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式
 - 增强 URL 抓取治理或外部 parser 接入
+- 增加 HTTP transport
 
 发布或交付前检查见 `docs/release-checklist.md`。

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { IntentProvider } from "../../providers/llm/intent-provider.js";
-import { createRuleBasedIntentProvider } from "../../providers/llm/rule-based-intent-provider.js";
+import { createConfiguredIntentProvider } from "../../providers/llm/provider-config.js";
 import { parseUrlSignal } from "../../providers/parser/url-parser.js";
 import { createSessionRepository, type SessionRepository } from "../../storage/session-repository.js";
 import {
@@ -24,7 +24,7 @@ export interface ClarifyService {
  */
 export async function createClarifyService(
   repository?: SessionRepository,
-  intentProvider: IntentProvider = createRuleBasedIntentProvider()
+  intentProvider: IntentProvider = createConfiguredIntentProvider()
 ): Promise<ClarifyService> {
   const sessionRepository = repository ?? (await createSessionRepository());
 

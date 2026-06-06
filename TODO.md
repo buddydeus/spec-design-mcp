@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 5 已完成，当前 5 阶段计划收尾
+- 最近检查：阶段 6 已完成，待规划下一阶段
 - 最近验证：
-  - `npm test`：30 个测试文件、52 个测试通过
+  - `npm test`：32 个测试文件、56 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -24,6 +24,7 @@
 - 创建 session
 - 追加 `text` / `url` 输入
 - LLM-compatible intent provider 接口
+- 可配置 OpenAI-compatible LLM intent provider
 - rule-based clarify
 - URL metadata 降级诊断
 - 生成受限 `DesignDOMAST`
@@ -40,7 +41,7 @@
 当前主要边界：
 
 - 当前只提供本地 stdio MCP Server，尚未提供 HTTP transport。
-- 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 尚未配置。
+- 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 需要显式环境变量启用。
 - URL 只从 metadata 派生弱信号，不抓取远端内容。
 - 设计产物以结构可用为主，不追求高保真视觉。
 - preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
@@ -158,6 +159,24 @@
 - 运行时目录配置清晰。
 - `npm test`、`npm run typecheck`、`npm run build` 通过。
 
+### 阶段 6：接入真实 LLM provider 通道
+
+状态：已完成
+
+目标：
+
+- 已新增 OpenAI-compatible chat completions intent provider。
+- 已通过环境变量选择真实 LLM provider 或默认 rule-based fallback。
+- 已在 LLM 配置缺失、HTTP 失败或响应异常时自动 fallback。
+- 已补充 provider 配置和 HTTP provider 测试。
+
+验收：
+
+- 默认无配置时仍完全本地可跑。
+- 配置 `SPEC_DESIGN_MCP_INTENT_PROVIDER=openai_compatible` 后可调用真实 LLM endpoint。
+- LLM 失败不会破坏 clarify 主链路。
+- `npm test`、`npm run typecheck`、`npm run build` 通过。
+
 ## 当前下一步
 
-5 阶段计划已完成。下一轮建议从真实 LLM provider、URL 抓取治理、截图/视觉 diff 或 HTTP transport 中选择一个新阶段。
+阶段 6 已完成。下一轮建议从 URL 抓取治理、截图/视觉 diff 或 HTTP transport 中选择一个新阶段。
