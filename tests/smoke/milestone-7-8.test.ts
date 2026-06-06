@@ -140,4 +140,57 @@ describe("milestone 7-8 smoke", () => {
       )
     );
   });
+
+  it("exports a marketing sample with URL-derived context and style revision", async () => {
+    const session = await createSessionTool({
+      projectName: "LaunchKit",
+      goal: "Build marketing launch landing page"
+    });
+
+    await appendInputTool({
+      sessionId: session.sessionId,
+      inputs: [
+        {
+          type: "text",
+          text: "Create a bold landing page for marketers with hero features pricing faq and primary CTA Get Started"
+        },
+        {
+          type: "url",
+          url: "https://example.com/marketing-suite/launch"
+        }
+      ]
+    });
+
+    const clarify = await clarifyIntentTool({
+      sessionId: session.sessionId
+    });
+
+    expect(clarify.isReady).toBe(true);
+    expect(clarify.interimIntentModel).toMatchObject({
+      audience: "marketers",
+      styleTone: "bold"
+    });
+
+    const generated = await generateDesignTool({
+      sessionId: session.sessionId
+    });
+    const revised = await reviseDesignTool({
+      sessionId: session.sessionId,
+      baseVersion: generated.designVersion,
+      revisionInstruction: "change background color to #f8fafc; change text color to #0f172a"
+    });
+
+    await confirmDesignTool({
+      sessionId: session.sessionId,
+      designVersion: revised.newVersion
+    });
+
+    const exported = await exportPackageTool({
+      sessionId: session.sessionId,
+      designVersion: revised.newVersion
+    });
+
+    expect(exported.artifacts).toContain("compiled.html");
+    await access(new URL(`../../${exported.deliveryPackageRef}`, import.meta.url));
+  });
 });

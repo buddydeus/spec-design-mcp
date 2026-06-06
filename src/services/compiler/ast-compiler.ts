@@ -13,6 +13,7 @@ interface DesignNode {
   name: string;
   tag: string;
   text: string | null;
+  style: Record<string, string | number | undefined>;
   meta: {
     componentName: string;
     bindingKey: string | null;
@@ -21,6 +22,22 @@ interface DesignNode {
   };
   children: DesignNode[];
 }
+
+const stylePropertyMap: Record<string, string> = {
+  width: "width",
+  maxWidth: "max-width",
+  minHeight: "min-height",
+  padding: "padding",
+  margin: "margin",
+  fontSize: "font-size",
+  fontWeight: "font-weight",
+  lineHeight: "line-height",
+  color: "color",
+  backgroundColor: "background-color",
+  borderRadius: "border-radius",
+  border: "border",
+  textAlign: "text-align"
+};
 
 function inferBindingType(kind: string): CompiledBindingField["type"] {
   if (kind === "image") {
@@ -60,14 +77,29 @@ function compileNode(
     });
   }
 
+  const style = Object.entries(node.style)
+    .filter((entry): entry is [string, string | number] => entry[1] !== undefined)
+    .map(([property, value]) => {
+      const cssProperty = stylePropertyMap[property];
+
+      return cssProperty ? `${cssProperty}: ${String(value)}` : null;
+    })
+    .filter((declaration): declaration is string => declaration !== null)
+    .join("; ");
+  const attributes: Record<string, string> = {
+    "data-node-id": node.id,
+    "data-node-name": node.name
+  };
+
+  if (style.length > 0) {
+    attributes.style = style;
+  }
+
   return {
     nodeId: node.id,
     name: node.name,
     tag: node.tag,
-    attributes: {
-      "data-node-id": node.id,
-      "data-node-name": node.name
-    },
+    attributes,
     text: node.text,
     children: node.children.map((child) =>
       compileNode(child, annotations, bindingFields, seenBindingKeys)

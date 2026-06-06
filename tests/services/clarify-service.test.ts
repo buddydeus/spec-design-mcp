@@ -63,8 +63,18 @@ describe("clarify service", () => {
     expect(result.interimIntentModel).toMatchObject({
       pageType: "landing_page",
       audience: "developers",
-      primaryCta: "Start Free Trial"
+      primaryCta: "Start Free Trial",
+      provider: {
+        name: "rule-based-intent-provider",
+        mode: "rule_based"
+      }
     });
+    expect(result.interimIntentModel.urlSignals).toEqual([
+      expect.objectContaining({
+        normalizedUrl: "https://example.com/product",
+        sourceType: "url_metadata"
+      })
+    ]);
     sessionService.close();
     clarifyService.close();
   });

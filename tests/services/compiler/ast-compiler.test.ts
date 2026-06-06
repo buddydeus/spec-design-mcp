@@ -31,7 +31,10 @@ const designAst = {
         tag: "section",
         text: null,
         props: {},
-        style: {},
+        style: {
+          backgroundColor: "#0f172a",
+          color: "#ffffff"
+        },
         layout: { mode: "flex", direction: "column", gap: 16 },
         meta: {
           componentName: "HeroSection",
@@ -105,5 +108,14 @@ describe("AST compiler", () => {
         { key: "hero.cta", type: "text" }
       ]
     });
+  });
+
+  it("maps supported AST style fields into compiled node attributes", () => {
+    const compiledDocument = compileDesignAst(designAst);
+    const heroSection = compiledDocument.root.children[0]!;
+
+    expect(heroSection.attributes.style).toBe(
+      "color: #ffffff; background-color: #0f172a"
+    );
   });
 });

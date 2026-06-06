@@ -10,9 +10,9 @@
 
 - 分支：`master`
 - 远端跟踪：`origin/master`
-- 最近检查：阶段 3 已完成，待开始阶段 4
+- 最近检查：阶段 4 已完成，待开始阶段 5
 - 最近验证：
-  - `npm test`：27 个测试文件、45 个测试通过
+  - `npm test`：29 个测试文件、50 个测试通过
   - `npm run typecheck`：通过
   - `npm run build`：通过
   - stdio smoke：SDK client 可拉起 `dist/src/server.js` 并列出 7 个 MCP tools
@@ -23,20 +23,22 @@
 - 官方 MCP SDK tool 注册
 - 创建 session
 - 追加 `text` / `url` 输入
+- LLM-compatible intent provider 接口
 - rule-based clarify
+- URL metadata 降级诊断
 - 生成受限 `DesignDOMAST`
 - 共享 `CompiledDocument` 编译中间结构
 - 生成本地 preview
 - 基于自然语言 revise 并生成新版本
 - confirm 指定设计版本
 - export 最小交付包
-- 两组 milestone 7-8 端到端 smoke 样例
+- 三组 milestone 7-8 端到端 smoke 样例
 
 当前主要边界：
 
 - 当前只提供本地 stdio MCP Server，尚未提供 HTTP transport。
-- 生成、澄清、修订仍是 rule-based，不是真实 LLM provider。
-- URL 解析能力较基础。
+- 默认 intent provider 仍是 rule-based fallback，真实 LLM provider 尚未配置。
+- URL 只从 metadata 派生弱信号，不抓取远端内容。
 - 设计产物以结构可用为主，不追求高保真视觉。
 - preview/export 已共享基础编译核心；页面壳层和产物输出仍按模式分离。
 
@@ -118,15 +120,15 @@
 
 ### 阶段 4：增强真实可用性
 
-状态：待开始
+状态：已完成
 
 目标：
 
-- 定义 LLM provider 接口并保留 rule-based fallback。
-- 增强 URL parser 的降级与错误提示。
-- 扩充固定样例集。
-- 提升 export CSS 的基础视觉质量。
-- 继续保持单页 Landing Page v0 范围，不提前扩到多页面。
+- 已定义 LLM-compatible intent provider 接口并保留 rule-based fallback。
+- 已增强 URL parser 的降级与错误提示。
+- 已扩充固定样例集到 3 组。
+- 已提升 export CSS 的基础视觉质量，并支持基础 AST style 映射。
+- 已继续保持单页 Landing Page v0 范围，不提前扩到多页面。
 
 验收：
 
@@ -155,4 +157,4 @@
 
 ## 当前下一步
 
-开始阶段 4：增强真实可用性。
+开始阶段 5：工程化收尾。

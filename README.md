@@ -17,6 +17,8 @@
 - stdio MCP Server 入口
 - 官方 MCP SDK tool 注册
 - preview/export 共享基础编译核心
+- LLM-compatible intent provider 接口与 rule-based fallback
+- URL metadata 降级诊断
 
 ## 当前 `v0` 不做
 
@@ -25,6 +27,18 @@
 - 可视化编辑器
 - 高保真设计还原
 - screenshot 导出
+- 真实 LLM provider 默认接入
+
+## Intent Provider
+
+`clarify` 流程通过 `IntentProvider` 接口提取页面意图。当前默认实现是 deterministic rule-based provider，并在 `interimIntentModel.provider` 中返回 fallback 元信息。
+
+- `src/providers/llm/intent-provider.ts`
+  - 定义未来可由真实 LLM 实现替换的接口
+- `src/providers/llm/rule-based-intent-provider.ts`
+  - 当前默认 fallback，实现 audience、sections、CTA、style tone 的稳定提取
+- `src/providers/parser/url-parser.ts`
+  - 不抓取远端内容，只从 hostname/path 派生弱信号，并返回 `fallbackReason`
 
 ## 环境要求
 
@@ -110,7 +124,7 @@ npm start
 `DesignDOMAST` 会先编译为共享的 `CompiledDocument` 中间结构，再派生 preview/export 所需产物。
 
 - `src/services/compiler/`
-  - 统一 AST 编译、HTML 片段渲染、基础 CSS 规则
+  - 统一 AST 编译、HTML 片段渲染、基础 CSS 规则和基础 style 映射
 - `src/services/preview/`
   - 负责 preview 页面壳层和 `preview.html` / `section-summary.json` 落盘
 - `src/services/export/`
@@ -172,10 +186,10 @@ npm start
   - MCP server 注册与结构化返回测试
 
 当前 `Milestone 7-8` smoke 已覆盖 `2` 组固定样例，用于证明 `v0` 最小交付闭环可在不同输入组合下稳定运行。MCP server 测试覆盖 7 个工具注册与结构化 tool result 包装。
+当前固定 smoke 样例已扩展到 `3` 组，覆盖 developer、founder、marketer 三类输入组合。
 
 ## 后续优化
 
-- 增加更多固定样例
-- 优化导出样式质量
 - 接入真实 LLM provider
 - 扩展共享编译管线以支持截图、视觉 diff 或更多导出格式
+- 增强 URL 抓取治理或外部 parser 接入
